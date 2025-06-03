@@ -8,7 +8,9 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -52,15 +54,14 @@ public class UserController {
             users.replace(newUser.getId(), newUser);
             log.info("User {} updated", newUser);
             return newUser;
-        }
-        else {
+        } else {
             log.warn("User {} not found", newUser);
             throw new NotFoundException(String.format("User with id '%s' not found", newUser.getId()));
         }
     }
 
     private void setNameIfAbsent(User user) {
-        if (user.getName() == null || user.getName().trim().isEmpty()){
+        if (user.getName() == null || user.getName().trim().isEmpty()) {
             user.setName(user.getLogin());
             log.info("Set name {} for user {}", user.getName(), user);
         }

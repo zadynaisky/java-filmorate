@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.Optional;
 
 @Data
 public class User {

@@ -25,7 +25,7 @@ public class FilmController {
 
     @PostMapping
     public Film create(@Valid @RequestBody Film film) {
-        if (films.values().contains(film)){
+        if (films.values().contains(film)) {
             log.warn("Film {} already exists", film);
             throw new DuplicatedDataException("Film already exists");
         }
@@ -45,8 +45,7 @@ public class FilmController {
             films.replace(newFilm.getId(), newFilm);
             log.info("Film {} updated", newFilm);
             return newFilm;
-        }
-        else {
+        } else {
             log.warn("Film {} does not exist", newFilm);
             throw new NotFoundException(String.format("Film with id '%s' not found", newFilm.getId()));
         }
