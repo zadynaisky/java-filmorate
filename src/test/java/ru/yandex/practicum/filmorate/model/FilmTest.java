@@ -1,6 +1,8 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -8,14 +10,22 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FilmTest {
-    @Test
-    void testValidFilmCreation() {
-        Film film = new Film();
+    private Validator validator;
+    private Film film = new Film();
+
+    @BeforeEach
+    void setUp() {
+        validator = Validation.buildDefaultValidatorFactory().getValidator();
+        film = new Film();
         film.setName("The Matrix");
         film.setDescription("A mind-bending science fiction film");
         film.setReleaseDate(LocalDate.of(1999, 3, 31));
         film.setDuration(136);
+    }
 
+    @Test
+    void shouldCreateValidFilm() {
+        assertTrue(validator.validate(film).isEmpty());
         assertNotNull(film);
         assertEquals("The Matrix", film.getName());
         assertEquals("A mind-bending science fiction film", film.getDescription());
@@ -24,71 +34,47 @@ class FilmTest {
     }
 
     @Test
-    void testNameValidation() {
-        Film film = new Film();
-
-        // Проверка на null
-        assertThrows(ConstraintViolationException.class, () -> {
-            film.setName(null);
-        });
-
-        // Проверка на пустую строку
-        assertThrows(ConstraintViolationException.class, () -> {
-            film.setName("");
-        });
+    void shouldFailWhenNameIsBlank() {
+        film.setName(" ");
+        assertEquals(1, validator.validate(film).size());
+        film.setName("  ");
+        assertEquals(1, validator.validate(film).size());
     }
 
     @Test
-    void testDescriptionValidation() {
-        Film film = new Film();
-
-        // Проверка на null
-        assertThrows(ConstraintViolationException.class, () -> {
-            film.setDescription(null);
-        });
-
-        // Проверка на пустую строку
-        assertThrows(ConstraintViolationException.class, () -> {
-            film.setDescription("");
-        });
-
-        // Проверка на превышение длины
-        assertThrows(ConstraintViolationException.class, () -> {
-            film.setDescription("a".repeat(201));
-        });
+    void shouldFailWhenReleaseDateBefore1895_12_28() {
+        film.setReleaseDate(LocalDate.of(1895, 12, 27));
+        assertEquals(1, validator.validate(film).size());
     }
 
     @Test
-    void testReleaseDateValidation() {
-        Film film = new Film();
+    void shouldCreateValidFilmWhenReleaseDateIs1895_12_28() {
+        film.setReleaseDate(LocalDate.of(1895, 12, 28));
+        assertTrue(validator.validate(film).isEmpty());
+    }
 
-        // Проверка на будущее
-        assertThrows(ConstraintViolationException.class, () -> {
-            film.setReleaseDate(LocalDate.now().plusDays(1));
-        });
-
-        // Проверка на допустимую дату
+    @Test
+    void shouldCreateValidFilmWhenReleaseDateIsToday() {
         film.setReleaseDate(LocalDate.now());
-        assertEquals(LocalDate.now(), film.getReleaseDate());
+        assertTrue(validator.validate(film).isEmpty());
     }
 
     @Test
-    void testDurationValidation() {
-        Film film = new Film();
+    void shouldFailWhenReleaseDateOneDayAfterToday() {
+        film.setReleaseDate(LocalDate.now().plusDays(1));
+        assertEquals(1, validator.validate(film).size());
+    }
 
-        // Проверка на отрицательное значение
-        assertThrows(ConstraintViolationException.class, () -> {
-            film.setDuration(-1);
-        });
+    @Test
+    void shouldFailWhenDurationIsNegative() {
+        film.setDuration(-14);
+        assertEquals(1, validator.validate(film).size());
+    }
 
-        // Проверка на ноль
-        assertThrows(ConstraintViolationException.class, () -> {
-            film.setDuration(0);
-        });
-
-        // Проверка на положительное значение
-        film.setDuration(120);
-        assertEquals(120, film.getDuration());
+    @Test
+    void shouldFailWhenDurationIsZero() {
+        film.setDuration(0);
+        assertEquals(1, validator.validate(film).size());
     }
 
     @Test

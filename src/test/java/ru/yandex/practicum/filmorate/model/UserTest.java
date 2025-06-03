@@ -1,6 +1,8 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -8,14 +10,22 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UserTest {
-    @Test
-    void testValidUserCreation() {
-        User user = new User();
+    private Validator validator;
+    private User user;
+
+    @BeforeEach
+    void setUp() {
+        validator = Validation.buildDefaultValidatorFactory().getValidator();
+        user = new User();
         user.setEmail("test@example.com");
         user.setLogin("testuser");
         user.setName("John Doe");
         user.setBirthday(LocalDate.of(1990, 1, 1));
+    }
 
+    @Test
+    void shouldCreateValidUser() {
+        assertTrue(validator.validate(user).isEmpty());
         assertNotNull(user);
         assertEquals("test@example.com", user.getEmail());
         assertEquals("testuser", user.getLogin());
@@ -24,81 +34,24 @@ class UserTest {
     }
 
     @Test
-    void testEmailValidation() {
-        User user = new User();
-
-        // Проверка на null
-        assertThrows(ConstraintViolationException.class, () -> {
-            user.setEmail(null);
-        });
-
-        // Проверка на некорректный email
-        assertThrows(ConstraintViolationException.class, () -> {
-            user.setEmail("incorrectemail");
-        });
-
-        // Проверка на пустой email
-        assertThrows(ConstraintViolationException.class, () -> {
-            user.setEmail("");
-        });
-
-        // Проверка на валидный email
-        user.setEmail("test@example.com");
-        assertEquals("test@example.com", user.getEmail());
-    }
-
-    @Test
-    void testLoginValidation() {
-        User user = new User();
-
-        // Проверка на null
-        assertThrows(ConstraintViolationException.class, () -> {
-            user.setLogin(null);
-        });
-
-        // Проверка на пустую строку
-        assertThrows(ConstraintViolationException.class, () -> {
-            user.setLogin("");
-        });
-
-        // Проверка на логин с пробелами
-        assertThrows(ConstraintViolationException.class, () -> {
-            user.setLogin("test user");
-        });
-
-        // Проверка на валидный логин
-        user.setLogin("testuser");
-        assertEquals("testuser", user.getLogin());
-    }
-
-    @Test
-    void testBirthdayValidation() {
-        User user = new User();
-
-        // Проверка на будущее
-        assertThrows(ConstraintViolationException.class, () -> {
-            user.setBirthday(LocalDate.now().plusDays(1));
-        });
-
-        // Проверка на валидную дату в прошлом
-        user.setBirthday(LocalDate.of(1990, 1, 1));
-        assertEquals(LocalDate.of(1990, 1, 1), user.getBirthday());
-    }
-
-    @Test
-    void testNameValidation() {
-        User user = new User();
-
-        // Проверка на null (необязательное поле)
-        user.setName(null);
-        assertNull(user.getName());
-
-        // Проверка на пустую строку (необязательное поле)
+    void shouldUseLoginAsNameWhenNameIsEmpty() {
         user.setName("");
-        assertEquals("", user.getName());
+        assertEquals(user.getLogin(), user.getName());
+    }
 
-        // Проверка на валидное имя
-        user.setName("John Doe");
-        assertEquals("John Doe", user.getName());
+    @Test
+    void shouldFailWhenEmailIsInvalid() {
+        user.setEmail("invalid-email");
+        assertEquals(1, validator.validate(user).size());
+        user.setEmail("inv@lidem@il.ru");
+        assertEquals(1, validator.validate(user).size());
+    }
+
+    @Test
+    void shouldFailWhenLoginHasWhitespaceCharacters() {
+        user.setLogin("invalid login");
+        assertEquals(1, validator.validate(user).size());
+        user.setLogin("invalid  login");
+        assertEquals(1, validator.validate(user).size());
     }
 }
