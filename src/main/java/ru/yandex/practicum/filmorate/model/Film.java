@@ -9,10 +9,12 @@ import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @EqualsAndHashCode(exclude = {"id"})
-public class Film {
+public class Film implements Comparable<Film> {
     private Long id;
     @NotBlank(message = "name cannot be null or empty")
     private String name;
@@ -24,4 +26,11 @@ public class Film {
     private LocalDate releaseDate;
     @Positive(message = "duration cannot be negative or zero")
     private int duration;
+    private Set<Long> likes = new HashSet<>();
+
+
+    @Override
+    public int compareTo(Film o) {
+        return Long.compare(getId(), o.getId());
+    }
 }
