@@ -18,14 +18,14 @@ public class FilmService {
         this.filmStorage = filmStorage;
     }
 
-    public void addLike(Long userId, Long movieId) {
-        validateLikeParams(userId, movieId);
-        filmStorage.findById(movieId).getLikes().add(userId);
+    public void addLike(Long filmId, Long userId) {
+        validateLikeParams(filmId, userId);
+        filmStorage.findById(filmId).getLikes().add(userId);
     }
 
-    public void removeLike(Long userId, Long movieId) {
-        validateLikeParams(userId, movieId);
-        filmStorage.findById(movieId).getLikes().remove(userId);
+    public void removeLike(Long filmId, Long userId) {
+        validateLikeParams(filmId, userId);
+        filmStorage.findById(filmId).getLikes().remove(userId);
     }
 
     public List<Film> getTop(int count) {
@@ -37,12 +37,12 @@ public class FilmService {
                 .collect(toList());
     }
 
-    public void validateLikeParams(Long userId, Long movieId) {
+    public void validateLikeParams(Long filmId, Long userId) {
+        if (filmId == null) {
+            throw new IllegalArgumentException("filmId cannot be null");
+        }
         if (userId == null) {
             throw new IllegalArgumentException("userId cannot be null");
-        }
-        if (movieId == null) {
-            throw new IllegalArgumentException("movieId cannot be null");
         }
     }
 }
