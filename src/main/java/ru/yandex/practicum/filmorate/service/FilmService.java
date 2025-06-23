@@ -2,9 +2,12 @@ package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
 
+import java.util.Comparator;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -12,10 +15,12 @@ import static java.util.stream.Collectors.toList;
 @Service
 public class FilmService {
     private FilmStorage filmStorage;
+    private UserStorage userStorage;
 
     @Autowired
-    public FilmService(FilmStorage filmStorage) {
+    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
         this.filmStorage = filmStorage;
+        this.userStorage = userStorage;
     }
 
     public void addLike(Long filmId, Long userId) {
@@ -32,7 +37,7 @@ public class FilmService {
         return filmStorage
                 .findAll()
                 .stream()
-                .sorted((x, y) -> x.getLikes().size() - y.getLikes().size())
+                .sorted((x, y) -> y.getLikes().size() - x.getLikes().size())
                 .limit(count)
                 .collect(toList());
     }
@@ -43,6 +48,9 @@ public class FilmService {
         }
         if (userId == null) {
             throw new IllegalArgumentException("userId cannot be null");
+        }
+        if (userStorage.findById(userId) == null) {
+            throw new NotFoundException("User not found");
         }
     }
 }
