@@ -1,78 +1,62 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 @Slf4j
 public class UserController {
-    private static Map<Long, User> users = new HashMap<>();
+    private final UserService userService;
+
+    @GetMapping("/{id}")
+    public User findUser(@PathVariable("id") long userId) {
+        return userService.findById(userId);
+    }
 
     @GetMapping
     public Collection<User> findAll() {
-        return users.values();
+        return userService.findAll();
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public User create(@Valid @RequestBody final User user) {
-        setNameIfAbsent(user);
-        if (users.values().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
-            log.warn("User {} already exists", user);
-            throw new DuplicatedDataException("User already exists");
-        }
-        user.setId(getNextId());
-        users.put(user.getId(), user);
-        log.info("User {} created", user);
-        return user;
+        return userService.create(user);
     }
 
     @PutMapping
     public User update(@Valid @RequestBody User newUser) {
-        if (newUser.getId() == null) {
-            log.warn("User {} not found", newUser);
-            throw new ValidationException("Id cannot be null");
-        }
-        setNameIfAbsent(newUser);
-        if (users.containsKey(newUser.getId())) {
-            User oldUser = users.get(newUser.getId());
-            if (!oldUser.getEmail().equals(newUser.getEmail())
-                    && users.values().stream().anyMatch(u -> u.getEmail().equals(newUser.getEmail()))) {
-                log.warn("User {} already exists", newUser);
-                throw new DuplicatedDataException("User already exists");
-            }
-
-            users.replace(newUser.getId(), newUser);
-            log.info("User {} updated", newUser);
-            return newUser;
-        } else {
-            log.warn("User {} not found", newUser);
-            throw new NotFoundException(String.format("User with id '%s' not found", newUser.getId()));
-        }
+        return userService.update(newUser);
     }
 
-    private void setNameIfAbsent(User user) {
-        if (user.getName() == null || user.getName().trim().isEmpty()) {
-            user.setName(user.getLogin());
-            log.info("Set name {} for user {}", user.getName(), user);
-        }
+    @PutMapping("/{id}/friends/{friendId}")
+    public void addToFriends(@PathVariable("id") long userId, @PathVariable("friendId") long friendId) {
+        userService.addFriend(userId, friendId);
     }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @DeleteMapping("/{id}/friends/{friendId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeFromFriends(@PathVariable("id") long userId, @PathVariable long friendId) {
+        userService.removeFriend(userId, friendId);
+    }
+
+    @GetMapping("/{id}/friends")
+    public List<User> getFriends(@PathVariable("id") long userId) {
+        return userService.getFriends(userId);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public List<User> commonFriends(@PathVariable("id") long userId, @PathVariable("otherId") long otherId) {
+        return userService.getCommonFriends(userId, otherId);
     }
 }
