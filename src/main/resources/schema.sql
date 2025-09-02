@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS "USER"
     email    varchar NOT NULL,
     login    varchar NOT NULL,
     name     varchar,
-    birthday date
+    birthdate date
 );
 
 CREATE TABLE IF NOT EXISTS FILM
@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS FRIEND
     friend_id bigint  NOT NULL,
     accepted  boolean NOT NULL DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES "USER" (id),
-    FOREIGN KEY (friend_id) REFERENCES "USER" (id)
+    FOREIGN KEY (friend_id) REFERENCES "USER" (id),
+    UNIQUE (user_id, friend_id)
 );
 
 CREATE TABLE IF NOT EXISTS "LIKE"

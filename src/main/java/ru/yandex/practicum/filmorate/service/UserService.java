@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.repository.UserRepository;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,22 +17,23 @@ import static java.util.stream.Collectors.toList;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserStorage userStorage;
+    private final InMemoryUserStorage userStorage;
+    private final UserRepository userRepository;
 
     public User findById(long userId) {
-        return userStorage.findById(userId);
+        return userRepository.findById(userId);
     }
 
     public Collection<User> findAll() {
-        return userStorage.findAll();
+        return userRepository.findAll();
     }
 
     public User create(final User user) {
-        return userStorage.create(user);
+        return userRepository.create(user);
     }
 
     public User update(User newUser) {
-        return userStorage.update(newUser);
+        return userRepository.update(newUser);
     }
 
     public void addFriend(Long userId, Long friendUserId) {
@@ -38,8 +41,14 @@ public class UserService {
             throw new ValidationException("userId or friendUserId cannot be null");
         if (userId.equals(friendUserId))
             throw new ValidationException("User cannot be a friend of himself");
-        userStorage.findById(userId).getFriends().add(friendUserId);
-        userStorage.findById(friendUserId).getFriends().add(userId);
+
+        User user = userRepository.findById(userId);
+        User friendUser = userRepository.findById(friendUserId);
+            if (user == null || friendUser == null)
+                throw new ValidationException("user not found");
+
+        //userStorage.findById(userId).getFriends().add(friendUserId);
+        //userStorage.findById(friendUserId).getFriends().add(userId);
     }
 
     public void removeFriend(Long userId, Long friendUserId) {
