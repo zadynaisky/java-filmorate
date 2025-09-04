@@ -49,10 +49,12 @@ public class FilmRepositoryTest {
         film.setGenres(Set.of(genreRepository.findById(1)));
     }
 
+    /*
     @AfterEach
     void tearDown() {
         cleanDatabase();
     }
+     */
 
     @Test
     void testCreateAndGetById() {
@@ -105,8 +107,10 @@ public class FilmRepositoryTest {
         assertTrue(films.size() >= 2);
     }
 
+    /*
     private void cleanDatabase() {
         jdbcTemplate.execute("TRUNCATE TABLE film CASCADE");
         jdbcTemplate.execute("ALTER TABLE film ALTER COLUMN id RESTART WITH 1");
     }
+     */
 }
