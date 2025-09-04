@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.repository;
 
 import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,13 +47,6 @@ public class FilmRepositoryTest {
         film.setMpa(mpaRepository.findById(1));
         film.setGenres(Set.of(genreRepository.findById(1)));
     }
-
-    /*
-    @AfterEach
-    void tearDown() {
-        cleanDatabase();
-    }
-     */
 
     @Test
     void testCreateAndGetById() {
@@ -106,11 +98,4 @@ public class FilmRepositoryTest {
         Collection<Film> films = filmRepository.findAll();
         assertTrue(films.size() >= 2);
     }
-
-    /*
-    private void cleanDatabase() {
-        jdbcTemplate.execute("TRUNCATE TABLE film CASCADE");
-        jdbcTemplate.execute("ALTER TABLE film ALTER COLUMN id RESTART WITH 1");
-    }
-     */
 }
