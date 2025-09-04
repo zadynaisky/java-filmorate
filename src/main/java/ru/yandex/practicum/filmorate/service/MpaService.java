@@ -27,4 +27,8 @@ public class MpaService {
             throw new NotFoundException("Mpa with id " + mpaId + " not found");
         return mpa;
     }
+
+    public boolean exists(long mpaId) {
+        return findById(mpaId) != null;
+    }
 }

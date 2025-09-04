@@ -80,4 +80,19 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         update(sql, film.getId());
         saveGenres(film);
     }
+
+    public Collection<Film> getTop(int count) {
+        String sql = """
+                SELECT f2.*
+                FROM (
+                         SELECT film_id, COUNT(*) as c
+                         FROM `like`
+                         GROUP BY film_id
+                     ) as f1
+                         INNER JOIN film as f2 ON f1.film_id = f2.id
+                ORDER BY f1.c DESC
+                LIMIT ? ;
+                """;
+        return findMany(sql, filmRowMapper, count);
+    }
 }

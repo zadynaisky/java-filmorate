@@ -1,27 +1,25 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.repository.LikeRepository;
 
 import java.util.Collection;
-import java.util.List;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 @Service
 @RequiredArgsConstructor
 public class FilmService {
-    private final InMemoryFilmStorage filmStorage;
     private final FilmRepository filmRepository;
     private final LikeRepository likeRepository;
+    private final MpaService mpaService;
+    private final GenreService genreService;
 
     public Film findById(long filmId) {
         var film = filmRepository.findById(filmId);
@@ -36,6 +34,8 @@ public class FilmService {
     }
 
     public Film create(Film film) {
+        validateMpa(film.getMpa());
+        validateGenres(film.getGenres());
         return filmRepository.create(film);
     }
 
@@ -53,13 +53,8 @@ public class FilmService {
         likeRepository.removeLike(filmId, userId);
     }
 
-    public List<Film> getTop(int count) {
-        return filmStorage
-                .findAll()
-                .stream()
-                .sorted((x, y) -> y.getLikes().size() - x.getLikes().size())
-                .limit(count)
-                .collect(toList());
+    public Collection<Film> getTop(int count) {
+        return filmRepository.getTop(count);
     }
 
     public void validateLikeParams(Long filmId, Long userId) {
@@ -69,10 +64,18 @@ public class FilmService {
         if (userId == null) {
             throw new IllegalArgumentException("userId cannot be null");
         }
-        /*
-        if (userStorage.findById(userId) == null) {
-            throw new NotFoundException("User not found");
-        }
-         */
+    }
+
+    public void validateMpa(Mpa mpa) {
+        if (!mpaService.exists(mpa.getId()))
+            throw new NotFoundException("Mpa not found");
+    }
+
+    public void validateGenres(Collection<Genre> genres) {
+        Collection<Long> allGenreIds = genreService.findAll().stream().map(Genre::getId).collect(toSet());
+        genres.forEach(x -> {
+            if (!allGenreIds.contains(x.getId()))
+                throw new NotFoundException("Genre not found");
+        });
     }
 }

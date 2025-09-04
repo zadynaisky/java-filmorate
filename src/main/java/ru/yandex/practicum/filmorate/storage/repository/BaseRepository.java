@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Collection;
+import java.util.Map;
 
 @RequiredArgsConstructor
 public class BaseRepository<T> {
@@ -66,4 +67,26 @@ public class BaseRepository<T> {
         }
     }
 
+    protected Long insertMultipleKeys(String query, Object... params) {
+        GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
+
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+            return ps;
+        }, generatedKeyHolder);
+
+        Map<String, Object> keys = generatedKeyHolder.getKeys();
+
+        if (keys != null && !keys.isEmpty()) {
+            for (Object value : keys.values()) {
+                if (value instanceof Long) {
+                    return (Long) value;
+                }
+            }
+        }
+        throw new NotFoundException("Data wasn't saved or no valid key found");
+    }
 }

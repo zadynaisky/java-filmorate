@@ -7,7 +7,6 @@ import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -32,7 +31,6 @@ public class Film implements Comparable<Film> {
     @Valid
     private Set<Genre> genres = new LinkedHashSet<>();
 
-    private Set<Long> likes = new HashSet<>();
     @Override
     public int compareTo(Film o) {
         return Long.compare(getId(), o.getId());

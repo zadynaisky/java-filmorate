@@ -12,17 +12,21 @@ import java.util.Collection;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/genre")
+@RequestMapping("/genres")
 @RequiredArgsConstructor
 @Slf4j
 public class GenreController {
     private final GenreService genreService;
 
     @GetMapping
-    public Collection<Genre> findAll() { return genreService.findAll(); }
+    public Collection<Genre> findAll() {
+        return genreService.findAll();
+    }
 
     @GetMapping("/{id}")
-    public Genre findById(@PathVariable("id") long id) { return genreService.findById(id); }
+    public Genre findById(@PathVariable("id") long id) {
+        return genreService.findById(id);
+    }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)

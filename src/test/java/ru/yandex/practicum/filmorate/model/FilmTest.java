@@ -21,6 +21,13 @@ class FilmTest {
         film.setDescription("A mind-bending science fiction film");
         film.setReleaseDate(LocalDate.of(1999, 3, 31));
         film.setDuration(136);
+
+        Mpa mpa = new Mpa();
+        mpa.setId(1);
+        mpa.setName("PG");
+        mpa.setDescription("Some description");
+        film.setMpa(mpa);
+
     }
 
     @Test

@@ -21,16 +21,16 @@ CREATE TABLE IF NOT EXISTS FRIEND
 (
     user_id   bigint  NOT NULL,
     friend_id bigint  NOT NULL,
-    accepted  boolean NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (user_id, friend_id),
     FOREIGN KEY (user_id) REFERENCES "USER" (id),
-    FOREIGN KEY (friend_id) REFERENCES "USER" (id),
-    UNIQUE (user_id, friend_id)
+    FOREIGN KEY (friend_id) REFERENCES "USER" (id)
 );
 
 CREATE TABLE IF NOT EXISTS "LIKE"
 (
     user_id bigint NOT NULL,
     film_id bigint NOT NULL,
+    PRIMARY KEY (user_id, film_id),
     FOREIGN KEY (user_id) REFERENCES "USER" (id) ON DELETE CASCADE,
     FOREIGN KEY (film_id) REFERENCES FILM (id) ON DELETE CASCADE
 );

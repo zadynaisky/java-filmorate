@@ -1,9 +1,9 @@
-MERGE INTO GENRE (id, name) VALUES (1, 'Comedy');
-MERGE INTO GENRE (id, name) VALUES (2, 'Drama');
-MERGE INTO GENRE (id, name) VALUES (3, 'Cartoon');
-MERGE INTO GENRE (id, name) VALUES (4, 'Thriller');
-MERGE INTO GENRE (id, name) VALUES (5, 'Documentary');
-MERGE INTO GENRE (id, name) VALUES (6, 'Action');
+MERGE INTO GENRE (id, name) VALUES (1, 'Комедия');
+MERGE INTO GENRE (id, name) VALUES (2, 'Драма');
+MERGE INTO GENRE (id, name) VALUES (3, 'Мультфильм');
+MERGE INTO GENRE (id, name) VALUES (4, 'Триллер');
+MERGE INTO GENRE (id, name) VALUES (5, 'Документальный');
+MERGE INTO GENRE (id, name) VALUES (6, 'Боевик');
 
 MERGE INTO MPA_RATING (id, name, description) VALUES (1, 'G', 'Film is suitable for all ages and contains nothing in its themes, language, violence, or other elements that would offend parents of young children.');
 MERGE INTO MPA_RATING (id, name, description) VALUES (2, 'PG', 'Film may contain some material that is not suitable for young children, and parents should consider whether the content is appropriate for their individual children.');
