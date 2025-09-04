@@ -64,10 +64,10 @@ public class UserRepository extends BaseRepository<User> implements UserStorage 
     public Collection<User> getCommonFriends(Long userId, Long otherUserId) {
         String sql = """
                 SELECT * FROM `user` WHERE id IN (
-                    SELECT friend_id 
+                    SELECT friend_id
                     FROM friend WHERE user_id = ?
                     INTERSECT
-                    SELECT friend_id 
+                    SELECT friend_id
                     FROM friend WHERE user_id = ?);
                 """;
         return findMany(sql, userRowMapper, userId, otherUserId);

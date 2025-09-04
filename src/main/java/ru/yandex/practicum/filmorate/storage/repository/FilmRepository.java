@@ -62,8 +62,8 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     @Override
     public Film update(Film film) {
         String sql = """
-                UPDATE film 
-                SET name = ?, description = ?, release_date = ?, duration = ?, mpa_rating_id = ? 
+                UPDATE film
+                SET name = ?, description = ?, release_date = ?, duration = ?, mpa_rating_id = ?
                 WHERE id = ?;
                 """;
         update(sql, film.getName(), film.getDescription(), film.getReleaseDate(),
@@ -74,7 +74,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
     private void updateGenres(Film film) {
         String sql = """
-                DELETE FROM film_genre 
+                DELETE FROM film_genre
                 WHERE film_id = ?;
                 """;
         update(sql, film.getId());

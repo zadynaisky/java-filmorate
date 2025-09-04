@@ -30,7 +30,7 @@ public class GenreRepository extends BaseRepository<Genre> {
 
     public Collection<Genre> findByFilmId(long filmId) {
         String sql = """
-                SELECT g.id, g.name 
+                SELECT g.id, g.name
                 FROM film_genre as fg 
                 INNER JOIN genre as g ON fg.genre_id = g.id
                 WHERE fg.film_id = ?
