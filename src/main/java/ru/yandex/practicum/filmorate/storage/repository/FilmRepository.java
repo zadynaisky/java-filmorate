@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage.repository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
@@ -23,7 +24,11 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     @Override
     public Film findById(Long id) {
         String sql = "SELECT * FROM film WHERE id = ?;";
-        return findOne(sql, filmRowMapper, id);
+        var film = findOne(sql, filmRowMapper, id);
+        if (film == null) {
+            throw new NotFoundException("Film not found");
+        }
+        return film;
     }
 
     @Override

@@ -22,11 +22,7 @@ public class FilmService {
     private final GenreService genreService;
 
     public Film findById(long filmId) {
-        var film = filmRepository.findById(filmId);
-        if (film == null) {
-            throw new NotFoundException("Film not found");
-        }
-        return film;
+        return filmRepository.findById(filmId);
     }
 
     public Collection<Film> findAll() {
