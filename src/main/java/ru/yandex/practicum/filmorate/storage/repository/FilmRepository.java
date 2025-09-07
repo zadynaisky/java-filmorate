@@ -126,7 +126,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                     LEFT JOIN GENRE g ON fg.genre_id = g.id
                     LEFT JOIN MPA_RATING as mp ON f.MPA_RATING_ID = mp.ID;
                 """;
-        List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[] {
+        List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
                 new FilmRowMapper2().mapRow(rs, rowNum),
                 new GenreRowMapper2().mapRow(rs, rowNum),
                 new MpaRowMapper2().mapRow(rs, rowNum)
