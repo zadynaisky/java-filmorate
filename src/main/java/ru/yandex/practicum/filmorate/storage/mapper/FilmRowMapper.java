@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.repository.GenreRepository;
 import ru.yandex.practicum.filmorate.storage.repository.MpaRepository;
 
@@ -26,13 +27,9 @@ public class FilmRowMapper implements RowMapper<Film> {
         film.setDescription(rs.getString("description"));
         film.setReleaseDate(rs.getObject("release_date", LocalDate.class));
         film.setDuration(rs.getInt("duration"));
-
-        var mpaRatingId = rs.getLong("mpa_rating_id");
-        var mpa = mpaRepository.findById(mpaRatingId);
+        var mpa = new Mpa();
+        mpa.setId(rs.getLong("mpa_rating_id"));
         film.setMpa(mpa);
-
-        film.setGenres(new LinkedHashSet<>(genreRepository.findByFilmId(film.getId())));
-
         return film;
     }
 }

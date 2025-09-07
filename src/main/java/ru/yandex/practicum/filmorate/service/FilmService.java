@@ -22,11 +22,14 @@ public class FilmService {
     private final GenreService genreService;
 
     public Film findById(long filmId) {
-        return filmRepository.findById(filmId);
+        var film = filmRepository.findById(filmId);
+        film.setMpa(mpaService.findById(film.getMpa().getId()));
+        film.setGenres(genreService.findByFilmId(filmId));
+        return film;
     }
 
     public Collection<Film> findAll() {
-        return filmRepository.findAll();
+        return filmRepository.findAll2();
     }
 
     public Film create(Film film) {

@@ -60,7 +60,6 @@ public class FilmRepositoryTest {
         assertEquals(film.getDuration(), result.getDuration());
         assertEquals(film.getReleaseDate(), result.getReleaseDate());
         assertEquals(film.getMpa().getId(), result.getMpa().getId());
-        assertTrue(result.getGenres().containsAll(film.getGenres()));
     }
 
     @Test
