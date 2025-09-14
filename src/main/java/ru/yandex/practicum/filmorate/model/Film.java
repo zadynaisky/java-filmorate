@@ -1,9 +1,7 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
@@ -26,8 +24,12 @@ public class Film implements Comparable<Film> {
     private LocalDate releaseDate;
     @Positive(message = "duration cannot be negative or zero")
     private int duration;
-    private Set<Long> likes = new HashSet<>();
-
+    @NotNull
+    @Valid
+    private Mpa mpa;
+    @NotNull
+    @Valid
+    private Set<Genre> genres = new HashSet<>();
 
     @Override
     public int compareTo(Film o) {
