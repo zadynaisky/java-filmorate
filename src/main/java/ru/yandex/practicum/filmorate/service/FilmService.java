@@ -77,4 +77,11 @@ public class FilmService {
                 throw new NotFoundException("Genre not found");
         });
     }
+
+    public void delete(long filmId) {
+        if (findById(filmId) == null) {
+            throw new NotFoundException("Film not found: " + filmId);
+        }
+        filmRepository.deleteById(filmId);
+    }
 }

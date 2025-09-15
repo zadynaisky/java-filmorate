@@ -101,20 +101,19 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         saveGenres(film);
     }
 
+    //заменил на LEFT JOIN, чтобы учитывать все фильмы, даже с 0 лайков
     public Collection<Film> getTop(int count) {
         String sql = """
-                SELECT f2.*
-                FROM (
-                         SELECT film_id, COUNT(*) as c
-                         FROM `like`
-                         GROUP BY film_id
-                     ) as f1
-                         INNER JOIN film as f2 ON f1.film_id = f2.id
-                ORDER BY f1.c DESC
-                LIMIT ? ;
-                """;
+        SELECT f.*
+        FROM "FILM" f
+        LEFT JOIN "LIKE" l ON l.film_id = f.id
+        GROUP BY f.id
+        ORDER BY COUNT(l.user_id) DESC, f.id ASC
+        LIMIT ? ;
+    """;
         return findMany(sql, filmRowMapper, count);
     }
+
 
     public Collection<Film> findAll2() {
         String sql = """
@@ -152,5 +151,10 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         }
 
         return new ArrayList<>(filmMap.values());
+    }
+
+    public void deleteById(Long id) {
+        String sql = "DELETE FROM \"FILM\" WHERE id = ?";
+        delete(sql, id);
     }
 }

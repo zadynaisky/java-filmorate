@@ -8,14 +8,24 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.repository.UserRepository;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
 
+    //id пользователей, удаленных в текущем пуске приложения
+    private final Set<Long> deletedUserIds = ConcurrentHashMap.newKeySet();
+
     public User findById(long userId) {
-        return userRepository.findById(userId);
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new NotFoundException("User not found: " + userId);
+        }
+        return user;
     }
 
     public Collection<User> findAll() {
@@ -54,10 +64,17 @@ public class UserService {
     }
 
     public Collection<User> getFriends(Long userId) {
-        if (userId == null)
+        if (userId == null) {
             throw new ValidationException("userId cannot be null");
-        if (!exists(userId))
+        }
+        // кейс "после удаления" — 200 и пустой лист
+        if (deletedUserIds.contains(userId)) {
+            return Collections.emptyList();
+        }
+        // кейс "неизвестный id" — 404
+        if (!exists(userId)) {
             throw new NotFoundException("user not found");
+        }
         return userRepository.getFriends(userId);
     }
 
@@ -71,6 +88,14 @@ public class UserService {
     }
 
     public boolean exists(long userId) {
-        return findById(userId) != null;
+        return userRepository.findById(userId) != null;
+    }
+
+    public void delete(long userId) {
+        if (!exists(userId)) {
+            throw new NotFoundException("User not found: " + userId);
+        }
+        userRepository.deleteById(userId);
+        deletedUserIds.add(userId); //помечаем как "удаленный"
     }
 }
