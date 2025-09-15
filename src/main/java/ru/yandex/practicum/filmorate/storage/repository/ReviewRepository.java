@@ -72,7 +72,7 @@ public class ReviewRepository extends BaseRepository<Review> {
     public void updateUseful(long reviewId) {
         String sql = """
                 UPDATE review
-                SET useful = 
+                SET useful =
                         (SELECT SUM(CASE
                                 WHEN is_positive = TRUE THEN 1
                                 WHEN is_positive = FALSE THEN -1
