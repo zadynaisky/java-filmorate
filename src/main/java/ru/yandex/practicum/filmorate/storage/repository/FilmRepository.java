@@ -180,23 +180,23 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
         if ("year".equalsIgnoreCase(sortBy)) {
             sql = """
-                SELECT f.* 
-                FROM film f
-                JOIN film_director fd ON f.id = fd.film_id
-                WHERE fd.director_id = ?
-                ORDER BY f.release_date ASC
-                """;
+                    SELECT f.*
+                    FROM film f
+                    JOIN film_director fd ON f.id = fd.film_id
+                    WHERE fd.director_id = ?
+                    ORDER BY f.release_date ASC
+                    """;
             params = new Object[]{directorId};
         } else if ("likes".equalsIgnoreCase(sortBy)) {
             sql = """
-                SELECT f.*, COUNT(l.user_id) as likes_count
-                FROM film f
-                JOIN film_director fd ON f.id = fd.film_id
-                LEFT JOIN "like" l ON f.id = l.film_id
-                WHERE fd.director_id = ?
-                GROUP BY f.id
-                ORDER BY likes_count DESC
-                """;
+                    SELECT f.*, COUNT(l.user_id) as likes_count
+                    FROM film f
+                    JOIN film_director fd ON f.id = fd.film_id
+                    LEFT JOIN "like" l ON f.id = l.film_id
+                    WHERE fd.director_id = ?
+                    GROUP BY f.id
+                    ORDER BY likes_count DESC
+                    """;
             params = new Object[]{directorId};
         } else {
             throw new IllegalArgumentException("Invalid sortBy parameter. Must be 'year' or 'likes'.");
