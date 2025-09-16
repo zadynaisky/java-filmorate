@@ -17,9 +17,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserService {
     private final UserRepository userRepository;
 
-    //id пользователей, удаленных в текущем пуске приложения
-    private final Set<Long> deletedUserIds = ConcurrentHashMap.newKeySet();
-
     public User findById(long userId) {
         User user = userRepository.findById(userId);
         if (user == null) {
@@ -67,11 +64,6 @@ public class UserService {
         if (userId == null) {
             throw new ValidationException("userId cannot be null");
         }
-        // кейс "после удаления" — 200 и пустой лист
-        if (deletedUserIds.contains(userId)) {
-            return Collections.emptyList();
-        }
-        // кейс "неизвестный id" — 404
         if (!exists(userId)) {
             throw new NotFoundException("user not found");
         }
@@ -96,6 +88,5 @@ public class UserService {
             throw new NotFoundException("User not found: " + userId);
         }
         userRepository.deleteById(userId);
-        deletedUserIds.add(userId); //помечаем как "удаленный"
     }
 }

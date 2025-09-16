@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS FRIEND
     user_id   bigint  NOT NULL,
     friend_id bigint  NOT NULL,
     PRIMARY KEY (user_id, friend_id),
-    FOREIGN KEY (user_id) REFERENCES "USER" (id),
-    FOREIGN KEY (friend_id) REFERENCES "USER" (id)
+    FOREIGN KEY (user_id) REFERENCES "USER" (id) ON DELETE CASCADE,
+    FOREIGN KEY (friend_id) REFERENCES "USER" (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS "LIKE"
