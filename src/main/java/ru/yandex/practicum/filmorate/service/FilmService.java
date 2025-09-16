@@ -20,11 +20,13 @@ public class FilmService {
     private final LikeRepository likeRepository;
     private final MpaService mpaService;
     private final GenreService genreService;
+    private final DirectorService directorService;
 
     public Film findById(long filmId) {
         var film = filmRepository.findById(filmId);
         film.setMpa(mpaService.findById(film.getMpa().getId()));
         film.setGenres(genreService.findByFilmId(filmId));
+        film.setDirectors(directorService.getDirectorsByFilmId(filmId).stream().collect(toSet()));
         return film;
     }
 
@@ -35,10 +37,18 @@ public class FilmService {
     public Film create(Film film) {
         validateMpa(film.getMpa());
         validateGenres(film.getGenres());
+        if (film.getDirectors() != null) {
+            film.getDirectors().forEach(d -> directorService.getDirectorById(d.getId()));
+        }
         return filmRepository.create(film);
     }
 
     public Film update(Film newFilm) {
+        validateMpa(newFilm.getMpa());
+        validateGenres(newFilm.getGenres());
+        if (newFilm.getDirectors() != null) {
+            newFilm.getDirectors().forEach(d -> directorService.getDirectorById(d.getId()));
+        }
         return filmRepository.update(newFilm);
     }
 
@@ -63,6 +73,9 @@ public class FilmService {
         if (userId == null) {
             throw new IllegalArgumentException("userId cannot be null");
         }
+        if (filmRepository.findById(filmId) == null) {
+            throw new NotFoundException("Film with ID " + filmId + " not found.");
+        }
     }
 
     public void validateMpa(Mpa mpa) {
@@ -76,5 +89,10 @@ public class FilmService {
             if (!allGenreIds.contains(x.getId()))
                 throw new NotFoundException("Genre not found");
         });
+    }
+
+    public Collection<Film> getFilmsByDirector(Long directorId, String sortBy) {
+        directorService.getDirectorById(directorId);
+        return filmRepository.getFilmsByDirector(directorId, sortBy);
     }
 }

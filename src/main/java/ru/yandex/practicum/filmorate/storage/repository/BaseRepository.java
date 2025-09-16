@@ -89,6 +89,4 @@ public class BaseRepository<T> {
         }
         throw new NotFoundException("Data wasn't saved or no valid key found");
     }
-
-
 }
