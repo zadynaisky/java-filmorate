@@ -9,10 +9,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper;
-import ru.yandex.practicum.filmorate.storage.mapper.GenreRowMapper;
-import ru.yandex.practicum.filmorate.storage.mapper.MpaRowMapper;
-import ru.yandex.practicum.filmorate.storage.mapper.UserRowMapper;
+import ru.yandex.practicum.filmorate.storage.mapper.*;
 import ru.yandex.practicum.filmorate.storage.repository.*;
 
 import java.time.LocalDate;
@@ -28,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.*;
         GenreRepository.class, GenreRowMapper.class,
         MpaRepository.class, MpaRowMapper.class,
         LikeRepository.class,
-        UserRepository.class, UserRowMapper.class})
+        UserRepository.class, UserRowMapper.class,
+        DirectorRepository.class, DirectorRowMapper.class})
 public class FilmRepositoryTest {
     private final FilmRepository filmRepository;
     private final GenreRepository genreRepository;

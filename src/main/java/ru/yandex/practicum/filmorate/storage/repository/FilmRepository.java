@@ -125,7 +125,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
     private void updateDirectors(Film film) {
         String sql = "DELETE FROM film_director WHERE film_id = ?";
-        update(sql, film.getId()); // Используем update из BaseRepository
+        jdbcTemplate.update(sql, film.getId());
         saveDirectors(film);
     }
 
