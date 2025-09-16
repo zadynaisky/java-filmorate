@@ -21,13 +21,10 @@ public class FilmService {
     private final MpaService mpaService;
     private final GenreService genreService;
     private final DirectorService directorService;
+    private final UserService userService;
 
     public Film findById(long filmId) {
-        var film = filmRepository.findById(filmId);
-        film.setMpa(mpaService.findById(film.getMpa().getId()));
-        film.setGenres(genreService.findByFilmId(filmId));
-        film.setDirectors(directorService.getDirectorsByFilmId(filmId).stream().collect(toSet()));
-        return film;
+        return filmRepository.findById(filmId);
     }
 
     public Collection<Film> findAll() {
@@ -54,12 +51,12 @@ public class FilmService {
 
     public void addLike(Long filmId, Long userId) {
         validateLikeParams(filmId, userId);
-        likeRepository.addLike(filmId, userId);
+        likeRepository.addLike(userId, filmId);
     }
 
     public void removeLike(Long filmId, Long userId) {
         validateLikeParams(filmId, userId);
-        likeRepository.removeLike(filmId, userId);
+        likeRepository.removeLike(userId, filmId);
     }
 
     public Collection<Film> getTop(int count) {
@@ -76,6 +73,9 @@ public class FilmService {
         if (filmRepository.findById(filmId) == null) {
             throw new NotFoundException("Film with ID " + filmId + " not found.");
         }
+        if (userService.findById(userId) == null) {
+            throw new NotFoundException("User with ID " + userId + " not found.");
+        }
     }
 
     public void validateMpa(Mpa mpa) {
@@ -84,6 +84,9 @@ public class FilmService {
     }
 
     public void validateGenres(Collection<Genre> genres) {
+        if (genres == null || genres.isEmpty()) {
+            return;
+        }
         Collection<Long> allGenreIds = genreService.findAll().stream().map(Genre::getId).collect(toSet());
         genres.forEach(x -> {
             if (!allGenreIds.contains(x.getId()))
