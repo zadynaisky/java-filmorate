@@ -52,8 +52,8 @@ public class FilmService {
         likeRepository.removeLike(filmId, userId);
     }
 
-    public Collection<Film> getTop(int count) {
-        return filmRepository.getTop(count);
+    public Collection<Film> getTop(int count, Long genreId, Integer year) {
+        return filmRepository.getTop(count, genreId, year);
     }
 
     public void validateLikeParams(Long filmId, Long userId) {
