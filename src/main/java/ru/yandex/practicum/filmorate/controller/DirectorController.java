@@ -2,40 +2,45 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.service.DirectorService;
 
-import java.util.List;
+import java.util.Collection;
 
 @RestController
 @RequestMapping("/directors")
 @RequiredArgsConstructor
+@Slf4j
 public class DirectorController {
     private final DirectorService directorService;
 
     @GetMapping
-    public List<Director> getAllDirectors() {
-        return directorService.getAllDirectors();
+    public Collection<Director> findAll() {
+        return directorService.findAll();
     }
 
     @GetMapping("/{id}")
-    public Director getDirectorById(@PathVariable Long id) {
-        return directorService.getDirectorById(id);
+    public Director findById(@PathVariable("id") long id) {
+        return directorService.findById(id);
     }
 
     @PostMapping
-    public Director addDirector(@Valid @RequestBody Director director) {
-        return directorService.addDirector(director);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Director create(@Valid @RequestBody Director director) {
+        return directorService.create(director);
     }
 
     @PutMapping
-    public Director updateDirector(@Valid @RequestBody Director director) {
-        return directorService.updateDirector(director);
+    public Director update(@Valid @RequestBody Director director) {
+        return directorService.update(director);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteDirector(@PathVariable Long id) {
-        directorService.deleteDirector(id);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable("id") long id) {
+        directorService.delete(id);
     }
 }

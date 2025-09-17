@@ -12,10 +12,4 @@ public interface FilmStorage {
     Film update(Film newFilm);
 
     Film findById(Long id);
-
-    Collection<Film> findAll2();
-
-    Collection<Film> getTop(int count);
-
-    Collection<Film> getFilmsByDirector(Long directorId, String sortBy);
 }

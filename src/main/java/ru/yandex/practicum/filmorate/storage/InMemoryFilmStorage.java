@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,24 +59,6 @@ public class InMemoryFilmStorage implements FilmStorage {
             log.warn("Film {} does not exist", newFilm);
             throw new NotFoundException(String.format("Film with id '%s' not found", newFilm.getId()));
         }
-    }
-
-    @Override
-    public Collection<Film> findAll2() {
-        log.warn("findAll2() is not fully implemented in InMemoryFilmStorage and returns findAll()");
-        return findAll();
-    }
-
-    @Override
-    public Collection<Film> getTop(int count) {
-        log.warn("getTop() is not implemented in InMemoryFilmStorage and returns empty collection");
-        return Collections.emptyList();
-    }
-
-    @Override
-    public Collection<Film> getFilmsByDirector(Long directorId, String sortBy) {
-        log.warn("getFilmsByDirector() is not implemented in InMemoryFilmStorage and returns empty collection");
-        return Collections.emptyList();
     }
 
     private long getNextId() {

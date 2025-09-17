@@ -27,6 +27,10 @@ public class UserService {
     }
 
     public User update(User newUser) {
+        // Добавлена проверка существования пользователя
+        if (!exists(newUser.getId())) {
+            throw new NotFoundException("User with id " + newUser.getId() + " not found");
+        }
         return userRepository.update(newUser);
     }
 

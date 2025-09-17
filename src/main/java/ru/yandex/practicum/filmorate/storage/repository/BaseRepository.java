@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -24,8 +25,13 @@ public class BaseRepository<T> {
         }
     }
 
+
     protected Collection<T> findMany(String query, RowMapper<T> rowMapper, Object... params) {
-        return jdbcTemplate.query(query, rowMapper, params);
+        try {
+            return jdbcTemplate.query(query, rowMapper, params);
+        } catch (EmptyResultDataAccessException e) {
+            return Collections.emptyList();
+        }
     }
 
     protected boolean delete(String query, Object... params) {
@@ -34,17 +40,13 @@ public class BaseRepository<T> {
     }
 
     protected void update(String query, Object... params) {
-        int rowsUpdated = jdbcTemplate.update(connection -> {
+        jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(query);
             for (int i = 0; i < params.length; i++) {
                 ps.setObject(i + 1, params[i]);
             }
             return ps;
         });
-
-        if (rowsUpdated == 0) {
-            throw new NotFoundException("Data wasn't saved");
-        }
     }
 
     protected Long insert(String query, Object... params) {

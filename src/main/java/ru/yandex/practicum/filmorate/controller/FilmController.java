@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -38,6 +39,20 @@ public class FilmController {
         return filmService.update(newFilm);
     }
 
+    @PutMapping("/{id}/directors")
+    public Film updateFilmDirectors(@PathVariable("id") long filmId,
+                                    @RequestBody Film filmWithDirectors) {
+        if (filmId != filmWithDirectors.getId()) {
+            throw new ValidationException("Film ID in path and body must match");
+        }
+
+        Film existingFilm = filmService.findById(filmId);
+        existingFilm.setDirectors(filmWithDirectors.getDirectors());
+
+        return filmService.update(existingFilm);
+    }
+
+
     @GetMapping("/popular")
     public Collection<Film> popular(@RequestParam(defaultValue = "10", name = "count") int count) {
         return filmService.getTop(count);
@@ -56,8 +71,13 @@ public class FilmController {
 
     @GetMapping("/director/{directorId}")
     public Collection<Film> getFilmsByDirector(
-            @PathVariable Long directorId,
-            @RequestParam(defaultValue = "year") String sortBy) {
+            @PathVariable("directorId") long directorId,
+            @RequestParam(defaultValue = "likes", name = "sortBy") String sortBy) {
+
+        if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
+            throw new ValidationException("Sort parameter must be 'year' or 'likes'");
+        }
+
         return filmService.getFilmsByDirector(directorId, sortBy);
     }
 }
