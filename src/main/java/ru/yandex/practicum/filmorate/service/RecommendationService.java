@@ -25,14 +25,6 @@ public class RecommendationService {
         this.filmRepository = filmRepository;
     }
 
-    /**
-     * Получить рекомендации фильмов для пользователя
-     * 
-     * Алгоритм:
-     * 1. Найти пользователей с максимальным количеством пересечения по лайкам
-     * 2. Определить фильмы, которые один пролайкал, а другой нет
-     * 3. Рекомендовать фильмы, которым поставил лайк пользователь с похожими вкусами
-     */
     public List<Film> getRecommendations(Long userId) {
         // Проверяем существование пользователя
         if (userRepository.findById(userId) == null) {
@@ -64,9 +56,6 @@ public class RecommendationService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Найти пользователя с наибольшим количеством общих лайков
-     */
     private Long findMostSimilarUser(Long userId) {
         return recommendationRepository.findUserWithMostCommonLikes(userId);
     }
