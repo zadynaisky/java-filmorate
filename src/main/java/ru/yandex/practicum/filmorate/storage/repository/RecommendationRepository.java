@@ -81,7 +81,7 @@ public class RecommendationRepository extends BaseRepository<Film> {
     public List<Long> findAnyUnlikedFilms(Long userId, int limit) {
         try {
             String sql = """
-                SELECT f.id 
+                SELECT f.id
                 FROM film f
                 WHERE f.id NOT IN (
                     SELECT film_id FROM \"like\" WHERE user_id = ?
