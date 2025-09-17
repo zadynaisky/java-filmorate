@@ -17,9 +17,7 @@ public class RecommendationService {
     private final UserRepository userRepository;
     private final FilmRepository filmRepository;
 
-    public RecommendationService(RecommendationRepository recommendationRepository,
-                                UserRepository userRepository,
-                                FilmRepository filmRepository) {
+    public RecommendationService(RecommendationRepository recommendationRepository, UserRepository userRepository, FilmRepository filmRepository) {
         this.recommendationRepository = recommendationRepository;
         this.userRepository = userRepository;
         this.filmRepository = filmRepository;
