@@ -19,12 +19,12 @@ public class ReviewRepository extends BaseRepository<Review> {
     }
 
     public Collection<Review> findAll(int count) {
-        String sql = "SELECT * FROM \"REVIEW\" ORDER BY id DESC LIMIT ?;";
+        String sql = "SELECT * FROM \"REVIEW\" ORDER BY useful DESC LIMIT ?;";
         return findMany(sql, reviewRowMapper, count);
     }
 
     public Collection<Review> findAllByFilmId(long filmId, int count) {
-        String sql = "SELECT * FROM \"REVIEW\" WHERE film_id = ? ORDER BY id DESC LIMIT ?;";
+        String sql = "SELECT * FROM \"REVIEW\" WHERE film_id = ? ORDER BY useful DESC LIMIT ?;";
         return findMany(sql, reviewRowMapper, filmId, count);
     }
 
