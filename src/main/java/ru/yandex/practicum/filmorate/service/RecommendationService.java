@@ -31,7 +31,7 @@ public class RecommendationService {
 
     public List<Film> getRecommendations(Long userId) {
         log.info("Getting recommendations for user {}", userId);
-        
+
         if (userRepository.findById(userId) == null) {
             throw new NotFoundException("User with id " + userId + " not found");
         }
@@ -48,9 +48,9 @@ public class RecommendationService {
         // 2. Находим пользователя с максимальным количеством общих лайков
         Long similarUserId = recommendationRepository.findUserWithMostCommonLikes(userId);
         log.info("Found similar user {} for user {}", similarUserId, userId);
-        
+
         List<Long> recommendedFilmIds = new ArrayList<>();
-        
+
         if (similarUserId != null) {
             // 3. Берём только те фильмы, которые лайкал похожий пользователь,
             //    но не лайкал текущий
@@ -61,18 +61,18 @@ public class RecommendationService {
             // Альтернативный подход: найти любого пользователя с лайками и взять его фильмы
             Set<Long> allUsers = recommendationRepository.getAllUsersWithLikes();
             log.info("Found {} users with likes", allUsers.size());
-            
+
             for (Long otherUserId : allUsers) {
                 if (!otherUserId.equals(userId)) {
                     Set<Long> otherUserLikes = recommendationRepository.getUserLikedFilms(otherUserId);
                     log.info("User {} has {} likes: {}", otherUserId, otherUserLikes.size(), otherUserLikes);
-                    
+
                     for (Long filmId : otherUserLikes) {
                         if (!userLikedFilms.contains(filmId)) {
                             recommendedFilmIds.add(filmId);
                         }
                     }
-                    
+
                     if (!recommendedFilmIds.isEmpty()) {
                         log.info("Found {} recommendations from user {} for user {}", recommendedFilmIds.size(), otherUserId, userId);
                         break;
