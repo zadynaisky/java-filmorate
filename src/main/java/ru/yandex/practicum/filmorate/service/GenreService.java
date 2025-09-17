@@ -5,11 +5,9 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.repository.GenreRepository;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.Comparator;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 public class GenreService {
@@ -33,9 +31,7 @@ public class GenreService {
         return genre;
     }
 
-    public Set<Genre> findByFilmId(long filmId) {
-        return genreRepository.findByFilmId(filmId).stream()
-                .sorted(Comparator.comparingLong(Genre::getId))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+    public List<Genre> findByFilmId(long filmId) {
+        return new ArrayList<>(genreRepository.findByFilmId(filmId));
     }
 }

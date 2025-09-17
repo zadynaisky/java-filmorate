@@ -61,7 +61,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
     private void saveGenres(Film film) {
         String sql = "INSERT INTO film_genre (film_id, genre_id) VALUES (?,?);";
-        List<Genre> genres = new ArrayList<>(film.getGenres());
+        List<Genre> genres = film.getGenres();
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {

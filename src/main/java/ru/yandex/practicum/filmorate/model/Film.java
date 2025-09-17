@@ -8,8 +8,8 @@ import java.util.Objects;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Film implements Comparable<Film> {
     private Long id;
@@ -28,7 +28,7 @@ public class Film implements Comparable<Film> {
     private Mpa mpa;
     @NotNull
     @Valid
-    private Set<Genre> genres = new LinkedHashSet<>();
+    private List<Genre> genres = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -78,11 +78,11 @@ public class Film implements Comparable<Film> {
         this.mpa = mpa;
     }
 
-    public Set<Genre> getGenres() {
+    public List<Genre> getGenres() {
         return genres;
     }
 
-    public void setGenres(Set<Genre> genres) {
+    public void setGenres(List<Genre> genres) {
         this.genres = genres;
     }
 
