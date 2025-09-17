@@ -22,8 +22,8 @@ public class RecommendationService {
     private final FilmRepository filmRepository;
 
     public RecommendationService(RecommendationRepository recommendationRepository,
-                                UserRepository userRepository,
-                                FilmRepository filmRepository) {
+                                 UserRepository userRepository,
+                                 FilmRepository filmRepository) {
         this.recommendationRepository = recommendationRepository;
         this.userRepository = userRepository;
         this.filmRepository = filmRepository;
@@ -39,23 +39,10 @@ public class RecommendationService {
         Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
         log.info("User {} has {} liked films: {}", userId, userLikedFilms.size(), userLikedFilms);
 
-        // 1. Нет лайков → возвращаем популярные фильмы
+        // 1. Если у пользователя нет лайков, возвращаем популярные фильмы
         if (userLikedFilms.isEmpty()) {
             log.info("User {} has no likes, returning popular films", userId);
-            Set<Long> allUsers = recommendationRepository.getAllUsersWithLikes();
-            for (Long otherUserId : allUsers) {
-                if (!otherUserId.equals(userId)) {
-                    Set<Long> otherUserLikes = recommendationRepository.getUserLikedFilms(otherUserId);
-                    if (!otherUserLikes.isEmpty()) {
-                        List<Long> filmIds = new ArrayList<>(otherUserLikes);
-                        if (filmIds.size() > 10) {
-                            filmIds = filmIds.subList(0, 10);
-                        }
-                        return convertFilmIdsToFilms(filmIds);
-                    }
-                }
-            }
-            return Collections.emptyList();
+            return getPopularFilms(10); // Возвращаем топ-10 популярных фильмов
         }
 
         // 2. Находим пользователя с максимальным количеством общих лайков
@@ -65,38 +52,35 @@ public class RecommendationService {
         List<Long> recommendedFilmIds = new ArrayList<>();
 
         if (similarUserId != null) {
-            // 3. Берём только те фильмы, которые лайкал похожий пользователь,
-            //    но не лайкал текущий
+            // 3. Берём фильмы, которые лайкал похожий пользователь, но не лайкал текущий
             recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
-            log.info("Found {} recommended film IDs from similar user for user {}: {}", recommendedFilmIds.size(), userId, recommendedFilmIds);
-        } else {
-            log.info("No similar users found, trying alternative approach for user {}", userId);
-            // Альтернативный подход: найти любого пользователя с лайками и взять его фильмы
-            Set<Long> allUsers = recommendationRepository.getAllUsersWithLikes();
-            log.info("Found {} users with likes", allUsers.size());
+            log.info("Found {} recommended film IDs from similar user for user {}: {}",
+                    recommendedFilmIds.size(), userId, recommendedFilmIds);
+        }
 
-            for (Long otherUserId : allUsers) {
-                if (!otherUserId.equals(userId)) {
-                    Set<Long> otherUserLikes = recommendationRepository.getUserLikedFilms(otherUserId);
-                    log.info("User {} has {} likes: {}", otherUserId, otherUserLikes.size(), otherUserLikes);
-
-                    for (Long filmId : otherUserLikes) {
-                        if (!userLikedFilms.contains(filmId)) {
-                            recommendedFilmIds.add(filmId);
-                        }
-                    }
-
-                    if (!recommendedFilmIds.isEmpty()) {
-                        log.info("Found {} recommendations from user {} for user {}", recommendedFilmIds.size(), otherUserId, userId);
-                        break;
-                    }
-                }
-            }
+        // 4. Если не нашли рекомендаций от похожего пользователя,
+        //    ищем любые фильмы, которые пользователь еще не лайкал
+        if (recommendedFilmIds.isEmpty()) {
+            log.info("No recommendations from similar user, finding any unliked films for user {}", userId);
+            recommendedFilmIds = recommendationRepository.getAnyUnlikedFilmIds(userId, userLikedFilms, 10);
+            log.info("Found {} unliked film IDs for user {}: {}",
+                    recommendedFilmIds.size(), userId, recommendedFilmIds);
         }
 
         List<Film> result = convertFilmIdsToFilms(recommendedFilmIds);
         log.info("Returning {} recommendations for user {}", result.size(), userId);
         return result;
+    }
+
+    private List<Film> getPopularFilms(int count) {
+        try {
+            // Используем метод из FilmRepository для получения популярных фильмов
+            Collection<Film> popularFilms = filmRepository.getTop(count);
+            return new ArrayList<>(popularFilms);
+        } catch (Exception e) {
+            log.error("Error getting popular films: {}", e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     private List<Film> convertFilmIdsToFilms(List<Long> filmIds) {
@@ -106,13 +90,13 @@ public class RecommendationService {
                 Film film = filmRepository.findById(filmId);
                 if (film != null) {
                     films.add(film);
+                } else {
+                    log.warn("Film with id {} not found", filmId);
                 }
             } catch (Exception e) {
-                // если фильм не найден, пропускаем
-                continue;
+                log.warn("Error retrieving film with id {}: {}", filmId, e.getMessage());
             }
         }
         return films;
     }
-
 }
