@@ -67,12 +67,12 @@ public class RecommendationRepository extends BaseRepository<Film> {
      */
     public Long findUserWithMostCommonLikes(Long userId) {
         String sql = """
-            SELECT l2.user_id, COUNT(*) as common_count
+            SELECT l2.user_id
             FROM \"like\" l1
             JOIN \"like\" l2 ON l1.film_id = l2.film_id
             WHERE l1.user_id = ? AND l2.user_id != ?
             GROUP BY l2.user_id
-            ORDER BY common_count DESC
+            ORDER BY COUNT(*) DESC
             LIMIT 1
             """;
 
