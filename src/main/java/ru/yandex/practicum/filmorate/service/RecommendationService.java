@@ -31,24 +31,33 @@ public class RecommendationService {
 
         Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
 
+        // 1. Нет лайков → пустой список
         if (userLikedFilms.isEmpty()) {
-            List<Long> allFilms = recommendationRepository.getAllFilmsNotLikedByUser(userId);
-            if (allFilms.size() > 10) {
-                allFilms = allFilms.subList(0, 10);
-            }
-            return convertFilmIdsToFilms(allFilms);
+            return Collections.emptyList();
         }
 
-        // Находим пользователя с максимальным количеством общих лайков
+        // 2. Находим пользователя с максимальным количеством общих лайков
         Long similarUserId = recommendationRepository.findUserWithMostCommonLikes(userId);
-
         if (similarUserId == null) {
             return Collections.emptyList();
         }
 
-        // Получаем рекомендации от похожего пользователя
+        Set<Long> similarUserLikes = recommendationRepository.getUserLikedFilms(similarUserId);
+
+        // 3. Если пересечение есть, но набор лайков одинаковый → пустой список
+        if (userLikedFilms.equals(similarUserLikes)) {
+            return Collections.emptyList();
+        }
+
+        // 4. Берём только те фильмы, которые лайкал похожий пользователь,
+        //    но не лайкал текущий
         List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
 
+        if (recommendedFilmIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Ограничим максимум 10 фильмов
         if (recommendedFilmIds.size() > 10) {
             recommendedFilmIds = recommendedFilmIds.subList(0, 10);
         }
