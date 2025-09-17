@@ -34,59 +34,59 @@ public class RecommendationServiceTest {
 
     @Test
     public void testGetRecommendations_UserNotFound() {
+        // Given
         Long userId = 1L;
         when(userRepository.findById(userId)).thenReturn(null);
 
+        // When & Then
         assertThrows(NotFoundException.class, () -> recommendationService.getRecommendations(userId));
     }
 
     @Test
     public void testGetRecommendations_UserHasNoLikes() {
+        // Given
         Long userId = 1L;
         User user = new User();
         when(userRepository.findById(userId)).thenReturn(user);
         when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(Collections.emptySet());
+        when(recommendationRepository.getAllFilmsNotLikedByUser(userId)).thenReturn(Arrays.asList(1L, 2L));
 
+        Film film1 = new Film();
+        Film film2 = new Film();
+        when(filmRepository.findById(1L)).thenReturn(film1);
+        when(filmRepository.findById(2L)).thenReturn(film2);
+
+        // When
         List<Film> recommendations = recommendationService.getRecommendations(userId);
 
-        assertTrue(recommendations.isEmpty());
-    }
-
-    @Test
-    public void testGetRecommendations_NoSimilarUsers() {
-        Long userId = 1L;
-        User user = new User();
-        Set<Long> userLikes = Set.of(1L, 2L);
-
-        when(userRepository.findById(userId)).thenReturn(user);
-        when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(userLikes);
-        when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(null);
-
-        List<Film> recommendations = recommendationService.getRecommendations(userId);
-
-        assertTrue(recommendations.isEmpty());
+        // Then
+        assertEquals(2, recommendations.size());
     }
 
     @Test
     public void testGetRecommendations_Success() {
+        // Given
         Long userId = 1L;
-        Long similarUserId = 2L;
+        Long otherUserId = 2L;
         User user = new User();
         Set<Long> userLikes = Set.of(1L, 2L);
-        List<Long> recommendedFilmIds = Arrays.asList(3L, 4L);
+        Set<Long> otherUserLikes = Set.of(2L, 3L, 4L);
+        Set<Long> allUsers = Set.of(1L, 2L);
 
         Film film1 = new Film();
         Film film2 = new Film();
 
         when(userRepository.findById(userId)).thenReturn(user);
         when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(userLikes);
-        when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(similarUserId);
-        when(recommendationRepository.getRecommendedFilmIds(userId, similarUserId)).thenReturn(recommendedFilmIds);
+        when(recommendationRepository.getAllUsersWithLikes()).thenReturn(allUsers);
+        when(recommendationRepository.getUserLikedFilms(otherUserId)).thenReturn(otherUserLikes);
         when(filmRepository.findById(3L)).thenReturn(film1);
         when(filmRepository.findById(4L)).thenReturn(film2);
 
+        // When
         List<Film> recommendations = recommendationService.getRecommendations(userId);
 
+        // Then
         assertEquals(2, recommendations.size());
         assertTrue(recommendations.contains(film1));
         assertTrue(recommendations.contains(film2));
