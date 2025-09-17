@@ -34,7 +34,6 @@ public class RecommendationRepository extends BaseRepository<Film> {
                 WHERE l1.user_id = ? AND l2.user_id != ?
                 GROUP BY l2.user_id
                 ORDER BY COUNT(*) DESC
-                LIMIT 1
                 """;
             List<Long> users = jdbcTemplate.queryForList(sql, Long.class, userId, userId);
             return users.isEmpty() ? null : users.get(0);
