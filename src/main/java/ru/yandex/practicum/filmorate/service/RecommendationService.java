@@ -39,30 +39,44 @@ public class RecommendationService {
         Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
         log.info("User {} has {} liked films: {}", userId, userLikedFilms.size(), userLikedFilms);
 
-        // 1. Если у пользователя нет лайков, возвращаем пустой список (по требованиям тестов)
+        // 1. Если у пользователя нет лайков, возвращаем пустой список
         if (userLikedFilms.isEmpty()) {
             log.info("User {} has no likes, returning empty list", userId);
             return Collections.emptyList();
         }
 
-        // 2. Находим всех пользователей с общими лайками
+        List<Long> recommendedFilmIds = new ArrayList<>();
+
+        // 2. Пытаемся найти рекомендации от похожих пользователей
         List<Long> similarUsers = recommendationRepository.findUsersWithCommonLikes(userId);
         log.info("Found {} similar users for user {}: {}", similarUsers.size(), userId, similarUsers);
 
-        List<Long> recommendedFilmIds = new ArrayList<>();
+        if (!similarUsers.isEmpty()) {
+            // 3. Для каждого похожего пользователя получаем рекомендации
+            for (Long similarUserId : similarUsers) {
+                List<Long> filmsFromSimilarUser = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
+                log.info("User {} recommended {} films from similar user {}: {}",
+                        userId, filmsFromSimilarUser.size(), similarUserId, filmsFromSimilarUser);
 
-        // 3. Для каждого похожего пользователя получаем рекомендации
-        for (Long similarUserId : similarUsers) {
-            List<Long> filmsFromSimilarUser = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
-            recommendedFilmIds.addAll(filmsFromSimilarUser);
+                recommendedFilmIds.addAll(filmsFromSimilarUser);
 
-            // Ограничиваем количество рекомендаций
-            if (recommendedFilmIds.size() >= 10) {
-                break;
+                // Если нашли достаточно рекомендаций, выходим
+                if (recommendedFilmIds.size() >= 10) {
+                    break;
+                }
             }
         }
 
-        // 4. Убираем дубликаты и ограничиваем количество
+        // 4. Если не нашли рекомендаций от похожих пользователей,
+        //    ищем любые фильмы, которые пользователь еще не лайкал
+        if (recommendedFilmIds.isEmpty()) {
+            log.info("No recommendations from similar users, finding any unliked films for user {}", userId);
+            recommendedFilmIds = recommendationRepository.findAnyUnlikedFilms(userId, 10);
+            log.info("Found {} unliked films for user {}: {}",
+                    recommendedFilmIds.size(), userId, recommendedFilmIds);
+        }
+
+        // 5. Убираем дубликаты и ограничиваем количество
         Set<Long> uniqueFilmIds = new LinkedHashSet<>(recommendedFilmIds);
         recommendedFilmIds = new ArrayList<>(uniqueFilmIds);
 
