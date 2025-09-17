@@ -32,7 +32,7 @@ public class GenreRepository extends BaseRepository<Genre> {
                 FROM film_genre as fg
                 INNER JOIN genre as g ON fg.genre_id = g.id
                 WHERE fg.film_id = ?
-                ORDER BY g.id;  // Изменено: сортировка по g.id вместо fg.id
+                ORDER BY fg.id
                 """;
         return findMany(sql, genreRowMapper, filmId);
     }

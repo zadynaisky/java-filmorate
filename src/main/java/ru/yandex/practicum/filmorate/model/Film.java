@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Data
@@ -41,7 +41,7 @@ public class Film implements Comparable<Film> {
     private List<Genre> genres = new ArrayList<>();
 
     @Valid
-    private Set<Genre> genres = new HashSet<>();
+    private Set<Genre> genres = new LinkedHashSet<>();
 
     public Long getId() {
         return id;
@@ -91,11 +91,11 @@ public class Film implements Comparable<Film> {
         this.mpa = mpa;
     }
 
-    public Set<Genre> getGenres() {
+    public List<Genre> getGenres() {
         return genres;
     }
 
-    public void setGenres(Set<Genre> genres) {
+    public void setGenres(List<Genre> genres) {
         this.genres = genres;
     }
 
