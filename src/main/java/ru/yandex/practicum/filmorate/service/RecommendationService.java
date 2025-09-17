@@ -57,11 +57,6 @@ public class RecommendationService {
             // Получаем ID рекомендованных фильмов
             List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
 
-            // Если нет рекомендаций от самого похожего пользователя, попробуем найти любые фильмы, которые не лайкнул текущий пользователь
-            if (recommendedFilmIds.isEmpty()) {
-                return Collections.emptyList();
-            }
-
             // Преобразуем ID в объекты Film
             List<Film> recommendations = new ArrayList<>();
             for (Long filmId : recommendedFilmIds) {
