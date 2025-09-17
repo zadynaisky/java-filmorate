@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Map;
 
 public class BaseRepository<T> {
+
     protected final JdbcTemplate jdbcTemplate;
     
     public BaseRepository(JdbcTemplate jdbcTemplate) {
