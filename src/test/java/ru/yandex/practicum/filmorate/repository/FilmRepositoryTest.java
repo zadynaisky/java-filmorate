@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.repository;
 
-import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,17 +22,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Import({FilmRepository.class, FilmRowMapper.class,
         GenreRepository.class, GenreRowMapper.class,
         MpaRepository.class, MpaRowMapper.class,
         LikeRepository.class,
         UserRepository.class, UserRowMapper.class})
 public class FilmRepositoryTest {
-    private final FilmRepository filmRepository;
-    private final GenreRepository genreRepository;
-    private final MpaRepository mpaRepository;
-    private final JdbcTemplate jdbcTemplate;
+    @Autowired
+    private FilmRepository filmRepository;
+    @Autowired
+    private GenreRepository genreRepository;
+    @Autowired
+    private MpaRepository mpaRepository;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private Film film;
 

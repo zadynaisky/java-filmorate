@@ -6,8 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.EventService;
+import ru.yandex.practicum.filmorate.service.RecommendationService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
@@ -17,8 +19,10 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
+
     private final UserService userService;
     private final EventService eventService;
+    private final RecommendationService recommendationService;
 
     @GetMapping("/{id}")
     public User findUser(@PathVariable("id") long userId) {
@@ -48,7 +52,7 @@ public class UserController {
 
     @DeleteMapping("/{id}/friends/{friendId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void removeFromFriends(@PathVariable("id") long userId, @PathVariable long friendId) {
+    public void removeFromFriends(@PathVariable("id") long userId, @PathVariable("friendId") long friendId) {
         userService.removeFriend(userId, friendId);
     }
 
@@ -71,5 +75,11 @@ public class UserController {
     @GetMapping("/{id}/feed")
     public Collection<Event> getFeed(@PathVariable("id") long userId) {
         return eventService.getFeed(userId);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public Collection<Film> getRecommendations(@PathVariable("id") long userId) {
+        log.info("Getting recommendations for user {}", userId);
+        return recommendationService.getRecommendations(userId);
     }
 }
