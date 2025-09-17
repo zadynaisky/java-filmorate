@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.storage.repository;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -19,7 +18,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 @Repository
-@Slf4j
 public class FilmRepository extends BaseRepository<Film> implements FilmStorage {
     private final FilmRowMapper filmRowMapper;
 

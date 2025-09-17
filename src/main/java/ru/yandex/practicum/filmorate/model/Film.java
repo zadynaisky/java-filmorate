@@ -8,7 +8,7 @@ import java.util.Objects;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class Film implements Comparable<Film> {
@@ -28,7 +28,7 @@ public class Film implements Comparable<Film> {
     private Mpa mpa;
     @NotNull
     @Valid
-    private Set<Genre> genres = new HashSet<>();
+    private Set<Genre> genres = new LinkedHashSet<>();
 
     public Long getId() {
         return id;

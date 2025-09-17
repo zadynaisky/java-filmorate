@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -14,12 +13,19 @@ import java.util.Collection;
 import static java.util.stream.Collectors.toSet;
 
 @Service
-@RequiredArgsConstructor
 public class FilmService {
     private final FilmRepository filmRepository;
     private final LikeRepository likeRepository;
     private final MpaService mpaService;
     private final GenreService genreService;
+
+    public FilmService(FilmRepository filmRepository, LikeRepository likeRepository,
+                       MpaService mpaService, GenreService genreService) {
+        this.filmRepository = filmRepository;
+        this.likeRepository = likeRepository;
+        this.mpaService = mpaService;
+        this.genreService = genreService;
+    }
 
     public Film findById(long filmId) {
         var film = filmRepository.findById(filmId);
