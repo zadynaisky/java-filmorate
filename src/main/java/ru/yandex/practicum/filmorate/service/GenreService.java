@@ -6,7 +6,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.repository.GenreRepository;
 
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Service
@@ -32,6 +32,6 @@ public class GenreService {
     }
 
     public Set<Genre> findByFilmId(long filmId) {
-        return new HashSet<>(genreRepository.findByFilmId(filmId));
+        return new LinkedHashSet<>(genreRepository.findByFilmId(filmId));
     }
 }

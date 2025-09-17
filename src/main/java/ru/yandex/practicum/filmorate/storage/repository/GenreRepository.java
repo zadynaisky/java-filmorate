@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.storage.repository;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -9,7 +8,6 @@ import ru.yandex.practicum.filmorate.storage.mapper.GenreRowMapper;
 import java.util.Collection;
 
 @Repository
-@Slf4j
 public class GenreRepository extends BaseRepository<Genre> {
     private final GenreRowMapper genreRowMapper;
 

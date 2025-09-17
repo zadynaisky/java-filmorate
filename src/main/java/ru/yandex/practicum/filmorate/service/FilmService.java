@@ -1,7 +1,5 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Event;
@@ -22,7 +20,6 @@ import static ru.yandex.practicum.filmorate.model.OperationType.REMOVE;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class FilmService {
     private final FilmRepository filmRepository;
     private final LikeRepository likeRepository;
@@ -30,6 +27,14 @@ public class FilmService {
     private final GenreService genreService;
     private final EventService eventService;
     private final DirectorRepository directorRepository;
+
+    public FilmService(FilmRepository filmRepository, LikeRepository likeRepository,
+                       MpaService mpaService, GenreService genreService) {
+        this.filmRepository = filmRepository;
+        this.likeRepository = likeRepository;
+        this.mpaService = mpaService;
+        this.genreService = genreService;
+    }
 
     public Film findById(long filmId) {
         var film = filmRepository.findById(filmId);

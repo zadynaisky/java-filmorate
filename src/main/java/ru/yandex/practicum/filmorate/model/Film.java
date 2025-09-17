@@ -9,7 +9,8 @@ import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -40,8 +41,63 @@ public class Film implements Comparable<Film> {
     private List<Genre> genres = new ArrayList<>();
 
     @Valid
-    @JsonProperty("directors")
-    private Set<Director> directors = new LinkedHashSet<>();
+    private Set<Genre> genres = new HashSet<>();
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public LocalDate getReleaseDate() {
+        return releaseDate;
+    }
+
+    public void setReleaseDate(LocalDate releaseDate) {
+        this.releaseDate = releaseDate;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+
+    public Mpa getMpa() {
+        return mpa;
+    }
+
+    public void setMpa(Mpa mpa) {
+        this.mpa = mpa;
+    }
+
+    public Set<Genre> getGenres() {
+        return genres;
+    }
+
+    public void setGenres(Set<Genre> genres) {
+        this.genres = genres;
+    }
 
     @Override
     public int compareTo(Film o) {
