@@ -45,8 +45,8 @@ public class ReviewRepository extends BaseRepository<Review> {
     }
 
     public Review update(Review review) {
-        String sql = "UPDATE \"REVIEW\" SET content = ?, is_positive = ?, film_id = ?, user_id = ? WHERE id = ?;";
-        update(sql, review.getContent(), review.getIsPositive(), review.getFilmId(), review.getUserId(), review.getId());
+        String sql = "UPDATE \"REVIEW\" SET content = ?, is_positive = ? WHERE id = ?;";
+        update(sql, review.getContent(), review.getIsPositive(), review.getId());
         return review;
     }
 
