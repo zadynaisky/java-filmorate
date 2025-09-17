@@ -229,22 +229,22 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         String sql;
         if ("year".equals(sortBy)) {
             sql = """
-            SELECT f.* 
-            FROM film f
-            INNER JOIN film_director fd ON f.id = fd.film_id
-            WHERE fd.director_id = ?
-            ORDER BY f.release_date ASC
-            """;
+                    SELECT f.*
+                    FROM film f
+                    INNER JOIN film_director fd ON f.id = fd.film_id
+                    WHERE fd.director_id = ?
+                    ORDER BY f.release_date ASC
+                    """;
         } else {
             sql = """
-            SELECT f.*, COUNT(l.user_id) as like_count
-            FROM film f
-            INNER JOIN film_director fd ON f.id = fd.film_id
-            LEFT JOIN `like` l ON f.id = l.film_id
-            WHERE fd.director_id = ?
-            GROUP BY f.id
-            ORDER BY like_count DESC, f.id ASC
-            """;
+                    SELECT f.*, COUNT(l.user_id) as like_count
+                    FROM film f
+                    INNER JOIN film_director fd ON f.id = fd.film_id
+                    LEFT JOIN `like` l ON f.id = l.film_id
+                    WHERE fd.director_id = ?
+                    GROUP BY f.id
+                    ORDER BY like_count DESC, f.id ASC
+                    """;
         }
 
         try {
