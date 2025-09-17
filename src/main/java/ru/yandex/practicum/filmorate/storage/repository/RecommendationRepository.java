@@ -80,17 +80,20 @@ public class RecommendationRepository extends BaseRepository<Film> {
     /**
      * Получить ID фильмов, которые лайкнул targetUserId, но не лайкнул currentUserId
      */
-    public List<Long> getRecommendedFilmIds(Long currentUserId, Long targetUserId) {
-        String sql = """
-            SELECT DISTINCT l.film_id
-            FROM \"like\" l
-            WHERE l.user_id = ?
-            AND l.film_id NOT IN (
-                SELECT COALESCE(film_id, -1) FROM \"like\" WHERE user_id = ?
-            )
-            ORDER BY l.film_id
-            """;
+    public List<Long> getRecommendedFilmIds(Long currentUserId, Long similarUserId) {
+        // Лайки текущего пользователя
+        Set<Long> currentUserLikes = getUserLikedFilms(currentUserId);
 
-        return jdbcTemplate.queryForList(sql, Long.class, targetUserId, currentUserId);
+        // Лайки похожего пользователя
+        Set<Long> similarUserLikes = getUserLikedFilms(similarUserId);
+
+        // Убираем те фильмы, которые уже есть у текущего
+        similarUserLikes.removeAll(currentUserLikes);
+
+        // Возвращаем список, отсортированный по id
+        return similarUserLikes.stream()
+                .sorted()
+                .toList();
     }
+
 }
