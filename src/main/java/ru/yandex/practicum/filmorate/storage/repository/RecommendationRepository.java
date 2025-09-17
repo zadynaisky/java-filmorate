@@ -58,7 +58,7 @@ public class RecommendationRepository extends BaseRepository<Film> {
             )
             ORDER BY f.id
             """;
-        
+
         return jdbcTemplate.queryForList(sql, Long.class, targetUserId, currentUserId);
     }
 
@@ -75,7 +75,7 @@ public class RecommendationRepository extends BaseRepository<Film> {
             ORDER BY common_count DESC
             LIMIT 1
             """;
-        
+
         try {
             return jdbcTemplate.queryForObject(sql, Long.class, userId, userId);
         } catch (Exception e) {
