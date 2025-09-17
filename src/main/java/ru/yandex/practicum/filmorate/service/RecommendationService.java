@@ -1,4 +1,3 @@
-// src/main/java/ru/yandex/practicum/filmorate/service/RecommendationService.java
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
@@ -17,16 +16,16 @@ public class RecommendationService {
 
     private final RecommendationRepository recommendationRepository;
     private final FilmRepository filmRepository;
-    private final UserService userService;
+    private final UserService userService; // используем сервис, чтобы проверить существование пользователя
 
     /**
-     * Рекомендации фильмов пользователю по коллаборативной фильтрации:
-     * 1) ищем пользователя с максимальным пересечением лайков,
-     * 2) берём его лайкнутые фильмы и вычитаем те, что уже лайкнул целевой,
-     * 3) возвращаем уникальные фильмы.
+     * Рекомендации по коллаборативной фильтрации:
+     * 1) находим пользователя с максимальным пересечением лайков,
+     * 2) берём его лайкнутые фильмы, вычитаем фильмы текущего,
+     * 3) возвращаем уникальные фильмы (с сохранением порядка).
      */
     public Collection<Film> getRecommendations(long userId) {
-        // проверяем, что пользователь существует (кинет NotFoundException, если нет)
+        // проверка существования пользователя (кинет NotFoundException, если нет)
         userService.findById(userId);
 
         // лайки текущего пользователя
@@ -49,7 +48,7 @@ public class RecommendationService {
             return Collections.emptyList();
         }
 
-        // загружаем фильмы и убираем возможные дубли, сохраняя порядок
+        // загружаем фильмы и убираем дубли, сохраняя порядок
         Map<Long, Film> unique = new LinkedHashMap<>();
         for (Long id : recommendedIds) {
             Film f = filmRepository.findById(id);
