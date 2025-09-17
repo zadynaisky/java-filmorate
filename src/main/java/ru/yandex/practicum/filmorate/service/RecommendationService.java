@@ -42,11 +42,11 @@ public class RecommendationService {
 
             // Простой алгоритм: найти любого другого пользователя и взять его лайки, которых нет у текущего
             Set<Long> allUsers = recommendationRepository.getAllUsersWithLikes();
-            
+
             for (Long otherUserId : allUsers) {
                 if (!otherUserId.equals(userId)) {
                     Set<Long> otherUserLikes = recommendationRepository.getUserLikedFilms(otherUserId);
-                    
+
                     // Находим фильмы, которые лайкнул другой пользователь, но не лайкнул текущий
                     List<Long> recommendations = new ArrayList<>();
                     for (Long filmId : otherUserLikes) {
@@ -54,7 +54,7 @@ public class RecommendationService {
                             recommendations.add(filmId);
                         }
                     }
-                    
+
                     if (!recommendations.isEmpty()) {
                         return convertFilmIdsToFilms(recommendations);
                     }
