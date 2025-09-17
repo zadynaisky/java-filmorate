@@ -16,46 +16,49 @@ public class RecommendationService {
 
     private final RecommendationRepository recommendationRepository;
     private final FilmRepository filmRepository;
-    private final UserService userService; // используем сервис, чтобы проверить существование пользователя
 
-    /**
-     * Рекомендации по коллаборативной фильтрации:
-     * 1) находим пользователя с максимальным пересечением лайков,
-     * 2) берём его лайкнутые фильмы, вычитаем фильмы текущего,
-     * 3) возвращаем уникальные фильмы (с сохранением порядка).
-     */
-    public Collection<Film> getRecommendations(long userId) {
-        // проверка существования пользователя (кинет NotFoundException, если нет)
-        userService.findById(userId);
+    public RecommendationService(RecommendationRepository recommendationRepository, 
+                                UserRepository userRepository, 
+                                FilmRepository filmRepository) {
+        this.recommendationRepository = recommendationRepository;
+        this.userRepository = userRepository;
+        this.filmRepository = filmRepository;
+    }
 
-        // лайки текущего пользователя
-        Set<Long> userLiked = recommendationRepository.getUserLikedFilms(userId);
-        if (userLiked == null || userLiked.isEmpty()) {
-            log.info("User {} has no likes — empty recommendations.", userId);
+    public List<Film> getRecommendations(Long userId) {
+        // Проверяем существование пользователя
+        if (userRepository.findById(userId) == null) {
+            throw new NotFoundException("User with id " + userId + " not found");
+        }
+
+        // Получаем фильмы, которые уже лайкнул текущий пользователь
+        Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
+        
+        // Если пользователь не лайкнул ни одного фильма, возвращаем пустой список
+        if (userLikedFilms.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // находим наиболее похожего пользователя
-        Long similarUserId = recommendationRepository.findUserWithMostCommonLikes(userId);
+        // Находим пользователя с максимальным количеством общих лайков
+        Long similarUserId = findMostSimilarUser(userId);
+        
         if (similarUserId == null) {
             log.info("No similar users for {} — empty recommendations.", userId);
             return Collections.emptyList();
         }
 
-        // id фильмов, которые лайкнул похожий пользователь и не лайкнул текущий
-        List<Long> recommendedIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
-        if (recommendedIds == null || recommendedIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // загружаем фильмы и убираем дубли, сохраняя порядок
-        Map<Long, Film> unique = new LinkedHashMap<>();
-        for (Long id : recommendedIds) {
-            Film f = filmRepository.findById(id);
-            if (f != null) {
-                unique.putIfAbsent(f.getId(), f);
-            }
-        }
-        return new ArrayList<>(unique.values());
+        // Получаем ID рекомендованных фильмов
+        List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
+        
+        // Преобразуем ID в объекты Film
+        return recommendedFilmIds.stream()
+                .map(filmRepository::findById)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
+
+    private Long findMostSimilarUser(Long userId) {
+        return recommendationRepository.findUserWithMostCommonLikes(userId);
+    }
+
 }
