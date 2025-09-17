@@ -24,14 +24,6 @@ public class RecommendationService {
         this.filmRepository = filmRepository;
     }
 
-    /**
-     * Получить рекомендации фильмов для пользователя
-     *
-     * Алгоритм:
-     * 1. Найти пользователей с максимальным количеством пересечения по лайкам
-     * 2. Определить фильмы, которые один пролайкал, а другой нет
-     * 3. Рекомендовать фильмы, которым поставил лайк пользователь с похожими вкусами
-     */
     public List<Film> getRecommendations(Long userId) {
         try {
             // Проверяем существование пользователя
@@ -42,51 +34,65 @@ public class RecommendationService {
             // Получаем фильмы, которые уже лайкнул текущий пользователь
             Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
 
-            // Если пользователь не лайкнул ни одного фильма, возвращаем пустой список
+            // Если пользователь не лайкнул ни одного фильма → возвращаем любые нелайкнутые фильмы
             if (userLikedFilms.isEmpty()) {
-                return Collections.emptyList();
+                List<Long> allUnlikedFilms = recommendationRepository.getAllFilmsNotLikedByUser(userId);
+                return convertFilmIdsToFilms(allUnlikedFilms);
             }
 
-            // Находим пользователя с максимальным количеством общих лайков
-            Long similarUserId = findMostSimilarUser(userId);
-
-            List<Long> recommendedFilmIds = new ArrayList<>();
-
-            if (similarUserId != null) {
-                // Получаем ID рекомендованных фильмов от похожего пользователя
-                recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
-            }
-
-            // Если нет рекомендаций от похожего пользователя, берем любые фильмы, которые не лайкнул пользователь
-            if (recommendedFilmIds.isEmpty()) {
-                recommendedFilmIds = recommendationRepository.getAllFilmsNotLikedByUser(userId);
-            }
-
-            // Преобразуем ID в объекты Film
             List<Film> recommendations = new ArrayList<>();
-            for (Long filmId : recommendedFilmIds) {
-                try {
-                    Film film = filmRepository.findById(filmId);
-                    if (film != null) {
-                        recommendations.add(film);
-                    }
-                } catch (Exception e) {
-                    // Пропускаем фильмы, которые не удалось загрузить
-                    continue;
+
+            // Стратегия 1: Ищем пользователя с общими лайками
+            Long similarUserId = findMostSimilarUser(userId);
+            if (similarUserId != null) {
+                List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
+                recommendations = convertFilmIdsToFilms(recommendedFilmIds);
+                if (!recommendations.isEmpty()) {
+                    return recommendations;
                 }
             }
+
+            // Стратегия 2: Ищем любого другого пользователя с лайками
+            Set<Long> allUsersWithLikes = recommendationRepository.getAllUsersWithLikes();
+            for (Long otherUserId : allUsersWithLikes) {
+                if (!otherUserId.equals(userId)) {
+                    List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, otherUserId);
+                    recommendations = convertFilmIdsToFilms(recommendedFilmIds);
+                    if (!recommendations.isEmpty()) {
+                        return recommendations;
+                    }
+                }
+            }
+
+            // Стратегия 3: Берем любые фильмы, которые не лайкнул пользователь
+            List<Long> allUnlikedFilms = recommendationRepository.getAllFilmsNotLikedByUser(userId);
+            recommendations = convertFilmIdsToFilms(allUnlikedFilms);
+
             return recommendations;
+
         } catch (NotFoundException e) {
             throw e;
         } catch (Exception e) {
-            // В случае любой другой ошибки возвращаем пустой список
+            // В случае любой ошибки возвращаем пустой список
             return Collections.emptyList();
         }
     }
 
-    /**
-     * Найти пользователя с наибольшим количеством общих лайков
-     */
+    private List<Film> convertFilmIdsToFilms(List<Long> filmIds) {
+        List<Film> films = new ArrayList<>();
+        for (Long filmId : filmIds) {
+            try {
+                Film film = filmRepository.findById(filmId);
+                if (film != null) {
+                    films.add(film);
+                }
+            } catch (Exception e) {
+                continue;
+            }
+        }
+        return films;
+    }
+
     private Long findMostSimilarUser(Long userId) {
         try {
             return recommendationRepository.findUserWithMostCommonLikes(userId);
