@@ -3,13 +3,17 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.repository.LikeRepository;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -20,11 +24,13 @@ public class FilmService {
     private final LikeRepository likeRepository;
     private final MpaService mpaService;
     private final GenreService genreService;
+    private final DirectorService directorService;
 
     public Film findById(long filmId) {
         var film = filmRepository.findById(filmId);
         film.setMpa(mpaService.findById(film.getMpa().getId()));
         film.setGenres(genreService.findByFilmId(filmId));
+        film.setDirectors(new HashSet<>(directorService.findByFilmId(filmId)));
         return film;
     }
 
@@ -35,10 +41,19 @@ public class FilmService {
     public Film create(Film film) {
         validateMpa(film.getMpa());
         validateGenres(film.getGenres());
+        validateDirectors(film.getDirectors());
         return filmRepository.create(film);
     }
 
     public Film update(Film newFilm) {
+        Film existingFilm = filmRepository.findById(newFilm.getId());
+        if (existingFilm == null) {
+            throw new NotFoundException("Film with id " + newFilm.getId() + " not found");
+        }
+        validateMpa(newFilm.getMpa());
+        validateGenres(newFilm.getGenres());
+        validateDirectors(newFilm.getDirectors());
+
         return filmRepository.update(newFilm);
     }
 
@@ -76,5 +91,30 @@ public class FilmService {
             if (!allGenreIds.contains(x.getId()))
                 throw new NotFoundException("Genre not found");
         });
+    }
+
+    public void validateDirectors(Set<Director> directors) {
+        if (directors != null) {
+            for (Director director : directors) {
+                if (director.getId() == null) {
+                    throw new ValidationException("Director ID cannot be null");
+                }
+                if (!directorService.exists(director.getId())) {
+                    throw new NotFoundException("Director with id " + director.getId() + " not found");
+                }
+            }
+        }
+    }
+
+    public Collection<Film> getFilmsByDirector(long directorId, String sortBy) {
+        if (!directorService.exists(directorId)) {
+            throw new NotFoundException("Director not found");
+        }
+
+        if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
+            throw new ValidationException("Sort parameter must be 'year' or 'likes'");
+        }
+
+        return filmRepository.getFilmsByDirector(directorId, sortBy);
     }
 }
