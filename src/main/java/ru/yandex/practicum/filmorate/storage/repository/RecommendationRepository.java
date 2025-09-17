@@ -49,14 +49,13 @@ public class RecommendationRepository extends BaseRepository<Film> {
      */
     public List<Long> getRecommendedFilmIds(Long currentUserId, Long targetUserId) {
         String sql = """
-            SELECT DISTINCT f.id
-            FROM film f
-            JOIN \"like\" l ON f.id = l.film_id
+            SELECT DISTINCT l.film_id
+            FROM \"like\" l
             WHERE l.user_id = ?
-            AND f.id NOT IN (
+            AND l.film_id NOT IN (
                 SELECT film_id FROM \"like\" WHERE user_id = ?
             )
-            ORDER BY f.id
+            ORDER BY l.film_id
             """;
 
         return jdbcTemplate.queryForList(sql, Long.class, targetUserId, currentUserId);
@@ -77,7 +76,8 @@ public class RecommendationRepository extends BaseRepository<Film> {
             """;
 
         try {
-            return jdbcTemplate.queryForObject(sql, Long.class, userId, userId);
+            List<Long> users = jdbcTemplate.queryForList(sql, Long.class, userId, userId);
+            return users.isEmpty() ? null : users.get(0);
         } catch (Exception e) {
             return null;
         }

@@ -27,6 +27,14 @@ public class RecommendationService {
         this.filmRepository = filmRepository;
     }
 
+    /**
+     * Получить рекомендации фильмов для пользователя
+     *
+     * Алгоритм:
+     * 1. Найти пользователей с максимальным количеством пересечения по лайкам
+     * 2. Определить фильмы, которые один пролайкал, а другой нет
+     * 3. Рекомендовать фильмы, которым поставил лайк пользователь с похожими вкусами
+     */
     public List<Film> getRecommendations(Long userId) {
         if (userRepository.findById(userId) == null) {
             throw new NotFoundException("User with id " + userId + " not found");
@@ -43,7 +51,8 @@ public class RecommendationService {
             return Collections.emptyList();
         }
 
-        List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
+            // Получаем ID рекомендованных фильмов
+            List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
 
         return recommendedFilmIds.stream()
                 .map(filmRepository::findById)
