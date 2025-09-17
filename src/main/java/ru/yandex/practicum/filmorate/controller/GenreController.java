@@ -13,7 +13,7 @@ import java.util.Collection;
 @RequestMapping("/genres")
 public class GenreController {
     private final GenreService genreService;
-    
+
     public GenreController(GenreService genreService) {
         this.genreService = genreService;
     }
@@ -24,7 +24,7 @@ public class GenreController {
     }
 
     @GetMapping("/{id}")
-    public Genre findById(@PathVariable("id") long id) {
-        return genreService.findById(id);
+    public Genre findById(@PathVariable("id") long genreId) {
+        return genreService.findById(genreId);
     }
 }
