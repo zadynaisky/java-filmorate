@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.repository.RecommendationRepository;
 import ru.yandex.practicum.filmorate.storage.repository.UserRepository;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,25 +65,27 @@ public class RecommendationServiceTest {
         Long similarUserId = 2L;
         User user = new User();
         Set<Long> userLikes = Set.of(1L, 2L);
-        List<Long> recommendedFilmIds = Arrays.asList(3L, 4L);
+        List<Long> recommendedFilmIds = Arrays.asList(17L); // берем id фильма, который ожидается в API
 
-        Film film1 = new Film();
-        Film film2 = new Film();
+        Film film = new Film();
+        film.setId(17L);
+        film.setName("LnDqYQAji6rxRhA");
+        film.setDescription("HK9tzKGFqk1K7L5XsMHK5yZpmSNvr5lAIsDcCIlilFo0etBhU3");
+        film.setReleaseDate(LocalDate.of(1962, 6, 4));
+        film.setDuration(108);
 
         when(userRepository.findById(userId)).thenReturn(user);
         when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(userLikes);
         when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(similarUserId);
         when(recommendationRepository.getRecommendedFilmIds(userId, similarUserId)).thenReturn(recommendedFilmIds);
-        when(filmRepository.findById(3L)).thenReturn(film1);
-        when(filmRepository.findById(4L)).thenReturn(film2);
+        when(filmRepository.findById(17L)).thenReturn(film);
 
         // When
         List<Film> recommendations = recommendationService.getRecommendations(userId);
 
         // Then
-        assertEquals(2, recommendations.size());
-        assertTrue(recommendations.contains(film1));
-        assertTrue(recommendations.contains(film2));
+        assertEquals(1, recommendations.size());
+        assertEquals(film, recommendations.get(0));
     }
 
     @Test
