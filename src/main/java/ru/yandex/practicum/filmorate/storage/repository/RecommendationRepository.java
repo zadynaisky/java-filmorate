@@ -65,6 +65,7 @@ public class RecommendationRepository extends BaseRepository<Film> {
      * Найти пользователя с максимальным количеством общих лайков
      */
     public Long findUserWithMostCommonLikes(Long userId) {
+        // Сначала попробуем найти пользователей с общими лайками
         String sql = """
             SELECT l2.user_id
             FROM \"like\" l1
@@ -77,7 +78,21 @@ public class RecommendationRepository extends BaseRepository<Film> {
 
         try {
             List<Long> users = jdbcTemplate.queryForList(sql, Long.class, userId, userId);
-            return users.isEmpty() ? null : users.get(0);
+            if (!users.isEmpty()) {
+                return users.get(0);
+            }
+            
+            // Если нет общих лайков, найдем любого пользователя, который хотя бы что-то лайкнул
+            String fallbackSql = """
+                SELECT DISTINCT user_id 
+                FROM \"like\" 
+                WHERE user_id != ? 
+                LIMIT 1
+                """;
+            
+            List<Long> fallbackUsers = jdbcTemplate.queryForList(fallbackSql, Long.class, userId);
+            return fallbackUsers.isEmpty() ? null : fallbackUsers.get(0);
+            
         } catch (Exception e) {
             return null;
         }
