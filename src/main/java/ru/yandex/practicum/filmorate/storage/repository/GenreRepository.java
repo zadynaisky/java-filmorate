@@ -31,8 +31,7 @@ public class GenreRepository extends BaseRepository<Genre> {
                 SELECT g.id, g.name
                 FROM film_genre as fg
                 INNER JOIN genre as g ON fg.genre_id = g.id
-                WHERE fg.film_id = ?
-                ORDER BY fg.id ASC;
+                WHERE fg.film_id = ?;
                 """;
         return findMany(sql, genreRowMapper, filmId);
     }
