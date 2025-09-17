@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -7,10 +8,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
-import ru.yandex.practicum.filmorate.storage.repository.RecommendationRepository;
-import ru.yandex.practicum.filmorate.storage.repository.UserRepository;
+import ru.yandex.practicum.filmorate.storage.repository.LikeRepository;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -22,131 +23,194 @@ import static org.mockito.Mockito.*;
 public class RecommendationServiceTest {
 
     @Mock
-    private RecommendationRepository recommendationRepository;
-
-    @Mock
-    private UserRepository userRepository;
+    private LikeRepository likeRepository;
 
     @Mock
     private FilmRepository filmRepository;
 
+    @Mock
+    private UserService userService;
+
     @InjectMocks
     private RecommendationService recommendationService;
 
-    @Test
-    public void testGetRecommendations_UserNotFound() {
-        // Given
-        Long userId = 1L;
-        when(userRepository.findById(userId)).thenReturn(null);
+    private User user1;
+    private User user2;
+    private Film film1;
+    private Film film2;
+    private Film film3;
 
-        // When & Then
-        assertThrows(NotFoundException.class, () -> recommendationService.getRecommendations(userId));
+    @BeforeEach
+    void setUp() {
+        user1 = new User();
+        user1.setId(1L);
+        user1.setEmail("user1@test.com");
+        user1.setLogin("user1");
+        user1.setName("User One");
+
+        user2 = new User();
+        user2.setId(2L);
+        user2.setEmail("user2@test.com");
+        user2.setLogin("user2");
+        user2.setName("User Two");
+
+        Mpa mpa = new Mpa();
+        mpa.setId(1L);
+        mpa.setName("G");
+
+        film1 = new Film();
+        film1.setId(1L);
+        film1.setName("Film 1");
+        film1.setDescription("Description 1");
+        film1.setReleaseDate(LocalDate.of(2020, 1, 1));
+        film1.setDuration(120);
+        film1.setMpa(mpa);
+
+        film2 = new Film();
+        film2.setId(2L);
+        film2.setName("Film 2");
+        film2.setDescription("Description 2");
+        film2.setReleaseDate(LocalDate.of(2021, 1, 1));
+        film2.setDuration(130);
+        film2.setMpa(mpa);
+
+        film3 = new Film();
+        film3.setId(3L);
+        film3.setName("Film 3");
+        film3.setDescription("Description 3");
+        film3.setReleaseDate(LocalDate.of(2022, 1, 1));
+        film3.setDuration(140);
+        film3.setMpa(mpa);
     }
 
     @Test
-    public void testGetRecommendations_UserHasNoLikes() {
-        // Given
+    void getRecommendations_ShouldReturnRecommendedFilms_WhenSimilarUserExists() {
+        // Arrange
         Long userId = 1L;
-        User user = new User();
-        when(userRepository.findById(userId)).thenReturn(user);
-        when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(Collections.emptySet());
+        Map<Long, Set<Long>> allUsersLikes = new HashMap<>();
+        allUsersLikes.put(1L, Set.of(1L, 2L)); // user1 likes films 1, 2
+        allUsersLikes.put(2L, Set.of(1L, 2L, 3L)); // user2 likes films 1, 2, 3 (most similar)
 
-        // When
-        List<Film> recommendations = recommendationService.getRecommendations(userId);
+        when(userService.findById(userId)).thenReturn(user1);
+        when(likeRepository.getAllUsersLikes()).thenReturn(allUsersLikes);
+        when(filmRepository.findById(3L)).thenReturn(film3);
 
-        // Then
-        assertTrue(recommendations.isEmpty());
-    }
+        // Act
+        Collection<Film> recommendations = recommendationService.getRecommendations(userId);
 
-    @Test
-    public void testGetRecommendations_Success() {
-        // Given
-        Long userId = 1L;
-        Long similarUserId = 2L;
-        User user = new User();
-        Set<Long> userLikes = Set.of(1L, 2L);
-        List<Long> similarUsers = Arrays.asList(similarUserId);
-        List<Long> recommendedFilmIds = Arrays.asList(17L);
-
-        Film film = new Film();
-        film.setId(17L);
-        film.setName("LnDqYQAji6rxRhA");
-        film.setDescription("HK9tzKGFqk1K7L5XsMHK5yZpmSNvr5lAIsDcCIlilFo0etBhU3");
-        film.setReleaseDate(LocalDate.of(1962, 6, 4));
-        film.setDuration(108);
-
-        when(userRepository.findById(userId)).thenReturn(user);
-        when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(userLikes);
-        when(recommendationRepository.findUsersWithCommonLikes(userId)).thenReturn(similarUsers);
-        when(recommendationRepository.getRecommendedFilmIds(userId, similarUserId)).thenReturn(recommendedFilmIds);
-        when(filmRepository.findById(17L)).thenReturn(film);
-
-        // When
-        List<Film> recommendations = recommendationService.getRecommendations(userId);
-
-        // Then
+        // Assert
         assertEquals(1, recommendations.size());
-        assertEquals(film, recommendations.get(0));
+        assertTrue(recommendations.contains(film3));
+        verify(userService).findById(userId);
+        verify(likeRepository).getAllUsersLikes();
+        verify(filmRepository).findById(3L);
     }
 
     @Test
-    public void testGetRecommendations_NoSimilarUsers() {
-        // Given
+    void getRecommendations_ShouldReturnEmptyList_WhenUserHasNoLikes() {
+        // Arrange
         Long userId = 1L;
-        User user = new User();
-        Set<Long> userLikes = Set.of(1L, 2L);
+        Map<Long, Set<Long>> allUsersLikes = new HashMap<>();
+        allUsersLikes.put(2L, Set.of(1L, 2L));
 
-        when(userRepository.findById(userId)).thenReturn(user);
-        when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(userLikes);
-        when(recommendationRepository.findUsersWithCommonLikes(userId)).thenReturn(Collections.emptyList());
+        when(userService.findById(userId)).thenReturn(user1);
+        when(likeRepository.getAllUsersLikes()).thenReturn(allUsersLikes);
 
-        // When
-        List<Film> recommendations = recommendationService.getRecommendations(userId);
+        // Act
+        Collection<Film> recommendations = recommendationService.getRecommendations(userId);
 
-        // Then
+        // Assert
         assertTrue(recommendations.isEmpty());
+        verify(userService).findById(userId);
+        verify(likeRepository).getAllUsersLikes();
+        verify(filmRepository, never()).findById(any());
     }
 
     @Test
-    public void testGetRecommendations_MultipleSimilarUsers() {
-        // Given
+    void getRecommendations_ShouldReturnEmptyList_WhenNoSimilarUsersFound() {
+        // Arrange
         Long userId = 1L;
-        Long similarUserId1 = 2L;
-        Long similarUserId2 = 3L;
-        User user = new User();
-        Set<Long> userLikes = Set.of(1L, 2L);
-        List<Long> similarUsers = Arrays.asList(similarUserId1, similarUserId2);
-        List<Long> recommendedFilmIds1 = Arrays.asList(17L, 18L);
-        List<Long> recommendedFilmIds2 = Arrays.asList(19L);
+        Map<Long, Set<Long>> allUsersLikes = new HashMap<>();
+        allUsersLikes.put(1L, Set.of(1L, 2L)); // user1 likes films 1, 2
+        allUsersLikes.put(2L, Set.of(3L, 4L)); // user2 likes films 3, 4 (no intersection)
 
-        Film film17 = new Film();
-        film17.setId(17L);
-        film17.setName("Film 17");
+        when(userService.findById(userId)).thenReturn(user1);
+        when(likeRepository.getAllUsersLikes()).thenReturn(allUsersLikes);
 
-        Film film18 = new Film();
-        film18.setId(18L);
-        film18.setName("Film 18");
+        // Act
+        Collection<Film> recommendations = recommendationService.getRecommendations(userId);
 
-        Film film19 = new Film();
-        film19.setId(19L);
-        film19.setName("Film 19");
+        // Assert
+        assertTrue(recommendations.isEmpty());
+        verify(userService).findById(userId);
+        verify(likeRepository).getAllUsersLikes();
+        verify(filmRepository, never()).findById(any());
+    }
 
-        when(userRepository.findById(userId)).thenReturn(user);
-        when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(userLikes);
-        when(recommendationRepository.findUsersWithCommonLikes(userId)).thenReturn(similarUsers);
-        when(recommendationRepository.getRecommendedFilmIds(userId, similarUserId1)).thenReturn(recommendedFilmIds1);
-        when(recommendationRepository.getRecommendedFilmIds(userId, similarUserId2)).thenReturn(recommendedFilmIds2);
-        when(filmRepository.findById(17L)).thenReturn(film17);
-        when(filmRepository.findById(18L)).thenReturn(film18);
-        when(filmRepository.findById(19L)).thenReturn(film19);
+    @Test
+    void getRecommendations_ShouldReturnMultipleFilms_WhenSimilarUserLikesMultipleNewFilms() {
+        // Arrange
+        Long userId = 1L;
+        Map<Long, Set<Long>> allUsersLikes = new HashMap<>();
+        allUsersLikes.put(1L, Set.of(1L)); // user1 likes film 1
+        allUsersLikes.put(2L, Set.of(1L, 2L, 3L)); // user2 likes films 1, 2, 3
 
-        // When
-        List<Film> recommendations = recommendationService.getRecommendations(userId);
+        when(userService.findById(userId)).thenReturn(user1);
+        when(likeRepository.getAllUsersLikes()).thenReturn(allUsersLikes);
+        when(filmRepository.findById(2L)).thenReturn(film2);
+        when(filmRepository.findById(3L)).thenReturn(film3);
 
-        // Then
-        assertEquals(3, recommendations.size());
-        assertTrue(recommendations.stream().anyMatch(f -> f.getId().equals(17L)));
-        assertTrue(recommendations.stream().anyMatch(f -> f.getId().equals(18L)));
-        assertTrue(recommendations.stream().anyMatch(f -> f.getId().equals(19L)));
+        // Act
+        Collection<Film> recommendations = recommendationService.getRecommendations(userId);
+
+        // Assert
+        assertEquals(2, recommendations.size());
+        assertTrue(recommendations.contains(film2));
+        assertTrue(recommendations.contains(film3));
+        verify(userService).findById(userId);
+        verify(likeRepository).getAllUsersLikes();
+        verify(filmRepository).findById(2L);
+        verify(filmRepository).findById(3L);
+    }
+
+    @Test
+    void getRecommendations_ShouldThrowNotFoundException_WhenUserDoesNotExist() {
+        // Arrange
+        Long userId = 999L;
+        when(userService.findById(userId)).thenThrow(new NotFoundException("User not found"));
+
+        // Act & Assert
+        assertThrows(NotFoundException.class, () -> recommendationService.getRecommendations(userId));
+        verify(userService).findById(userId);
+        verify(likeRepository, never()).getAllUsersLikes();
+    }
+
+    @Test
+    void getRecommendations_ShouldChooseMostSimilarUser_WhenMultipleSimilarUsersExist() {
+        // Arrange
+        Long userId = 1L;
+        Map<Long, Set<Long>> allUsersLikes = new HashMap<>();
+        allUsersLikes.put(1L, Set.of(1L, 2L, 3L)); // user1 likes films 1, 2, 3
+        allUsersLikes.put(2L, Set.of(1L, 4L)); // user2 likes films 1, 4 (1 intersection)
+        allUsersLikes.put(3L, Set.of(1L, 2L, 5L)); // user3 likes films 1, 2, 5 (2 intersections - most similar)
+
+        Film film5 = new Film();
+        film5.setId(5L);
+        film5.setName("Film 5");
+
+        when(userService.findById(userId)).thenReturn(user1);
+        when(likeRepository.getAllUsersLikes()).thenReturn(allUsersLikes);
+        when(filmRepository.findById(5L)).thenReturn(film5);
+
+        // Act
+        Collection<Film> recommendations = recommendationService.getRecommendations(userId);
+
+        // Assert
+        assertEquals(1, recommendations.size());
+        assertTrue(recommendations.contains(film5)); // Should recommend film 5 from user3, not film 4 from user2
+        verify(userService).findById(userId);
+        verify(likeRepository).getAllUsersLikes();
+        verify(filmRepository).findById(5L);
+        verify(filmRepository, never()).findById(4L);
     }
 }

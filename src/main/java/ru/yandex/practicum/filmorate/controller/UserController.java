@@ -15,10 +15,10 @@ import java.util.List;
 @RequestMapping("/users")
 public class UserController {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserController.class);
-    
+
     private final UserService userService;
     private final RecommendationService recommendationService;
-    
+
     public UserController(UserService userService, RecommendationService recommendationService) {
         this.userService = userService;
         this.recommendationService = recommendationService;
