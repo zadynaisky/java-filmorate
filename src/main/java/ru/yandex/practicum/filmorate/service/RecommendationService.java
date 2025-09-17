@@ -42,25 +42,9 @@ public class RecommendationService {
             return Collections.emptyList();
         }
 
-        Set<Long> similarUserLikes = recommendationRepository.getUserLikedFilms(similarUserId);
-
-        // 3. Если пересечение есть, но набор лайков одинаковый → пустой список
-        if (userLikedFilms.equals(similarUserLikes)) {
-            return Collections.emptyList();
-        }
-
-        // 4. Берём только те фильмы, которые лайкал похожий пользователь,
+        // 3. Берём только те фильмы, которые лайкал похожий пользователь,
         //    но не лайкал текущий
         List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
-
-        if (recommendedFilmIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // Ограничим максимум 10 фильмов
-        if (recommendedFilmIds.size() > 10) {
-            recommendedFilmIds = recommendedFilmIds.subList(0, 10);
-        }
 
         return convertFilmIdsToFilms(recommendedFilmIds);
     }
@@ -73,8 +57,9 @@ public class RecommendationService {
                 if (film != null) {
                     films.add(film);
                 }
-            } catch (NotFoundException e) {
+            } catch (Exception e) {
                 // если фильм не найден, пропускаем
+                continue;
             }
         }
         return films;
