@@ -50,12 +50,17 @@ public class RecommendationService {
             // Находим пользователя с максимальным количеством общих лайков
             Long similarUserId = findMostSimilarUser(userId);
 
-            if (similarUserId == null) {
-                return Collections.emptyList();
+            List<Long> recommendedFilmIds = new ArrayList<>();
+
+            if (similarUserId != null) {
+                // Получаем ID рекомендованных фильмов от похожего пользователя
+                recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
             }
 
-            // Получаем ID рекомендованных фильмов
-            List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
+            // Если нет рекомендаций от похожего пользователя, берем любые фильмы, которые не лайкнул пользователь
+            if (recommendedFilmIds.isEmpty()) {
+                recommendedFilmIds = recommendationRepository.getAllFilmsNotLikedByUser(userId);
+            }
 
             // Преобразуем ID в объекты Film
             List<Film> recommendations = new ArrayList<>();
