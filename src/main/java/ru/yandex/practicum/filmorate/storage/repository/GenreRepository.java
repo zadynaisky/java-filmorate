@@ -17,7 +17,7 @@ public class GenreRepository extends BaseRepository<Genre> {
     }
 
     public Collection<Genre> findAll() {
-        String sql = "SELECT * FROM genre;";
+        String sql = "SELECT * FROM genre ORDER BY id;";
         return findMany(sql, genreRowMapper);
     }
 
@@ -32,9 +32,8 @@ public class GenreRepository extends BaseRepository<Genre> {
                 FROM film_genre as fg
                 INNER JOIN genre as g ON fg.genre_id = g.id
                 WHERE fg.film_id = ?
-                ORDER BY fg.id;
+                ORDER BY g.id;  // Изменено: сортировка по g.id вместо fg.id
                 """;
         return findMany(sql, genreRowMapper, filmId);
     }
-
 }
