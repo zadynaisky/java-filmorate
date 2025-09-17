@@ -26,30 +26,24 @@ public class RecommendationService {
     }
 
     public List<Film> getRecommendations(Long userId) {
-        // Проверяем существование пользователя
         if (userRepository.findById(userId) == null) {
             throw new NotFoundException("User with id " + userId + " not found");
         }
 
-        // Получаем фильмы, которые уже лайкнул текущий пользователь
         Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
-        
-        // Если пользователь не лайкнул ни одного фильма, возвращаем пустой список
+
         if (userLikedFilms.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // Находим пользователя с максимальным количеством общих лайков
         Long similarUserId = findMostSimilarUser(userId);
         
         if (similarUserId == null) {
             return Collections.emptyList();
         }
 
-        // Получаем ID рекомендованных фильмов
         List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
-        
-        // Преобразуем ID в объекты Film
+
         return recommendedFilmIds.stream()
                 .map(filmRepository::findById)
                 .filter(Objects::nonNull)
