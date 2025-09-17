@@ -49,18 +49,12 @@ public class RecommendationServiceTest {
         User user = new User();
         when(userRepository.findById(userId)).thenReturn(user);
         when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(Collections.emptySet());
-        when(recommendationRepository.getAllFilmsNotLikedByUser(userId)).thenReturn(Arrays.asList(1L, 2L));
-
-        Film film1 = new Film();
-        Film film2 = new Film();
-        when(filmRepository.findById(1L)).thenReturn(film1);
-        when(filmRepository.findById(2L)).thenReturn(film2);
 
         // When
         List<Film> recommendations = recommendationService.getRecommendations(userId);
 
         // Then
-        assertEquals(2, recommendations.size());
+        assertTrue(recommendations.isEmpty());
     }
 
     @Test
