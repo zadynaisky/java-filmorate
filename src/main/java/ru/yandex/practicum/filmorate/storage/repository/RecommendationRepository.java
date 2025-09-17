@@ -33,14 +33,14 @@ public class RecommendationRepository extends BaseRepository<Film> {
     public List<Long> findUsersWithCommonLikes(Long userId) {
         try {
             String sql = """
-                SELECT l2.user_id
-                FROM "like" l1
-                JOIN "like" l2 ON l1.film_id = l2.film_id
-                WHERE l1.user_id = ? AND l2.user_id != ?
-                GROUP BY l2.user_id
-                HAVING COUNT(*) > 0
-                ORDER BY COUNT(*) DESC
-                """;
+                    SELECT l2.user_id
+                    FROM "like" l1
+                    JOIN "like" l2 ON l1.film_id = l2.film_id
+                    WHERE l1.user_id = ? AND l2.user_id != ?
+                    GROUP BY l2.user_id
+                    HAVING COUNT(*) > 0
+                    ORDER BY COUNT(*) DESC
+                    """;
             return jdbcTemplate.queryForList(sql, Long.class, userId, userId);
         } catch (Exception e) {
             log.error("Error finding users with common likes for user {}: {}", userId, e.getMessage());
@@ -52,14 +52,14 @@ public class RecommendationRepository extends BaseRepository<Film> {
     public List<Long> getRecommendedFilmIds(Long currentUserId, Long similarUserId) {
         try {
             String sql = """
-                SELECT l.film_id
-                FROM \"like\" l
-                WHERE l.user_id = ?
-                AND l.film_id NOT IN (
-                    SELECT film_id FROM \"like\" WHERE user_id = ?
-                )
-                ORDER BY l.film_id
-                """;
+                    SELECT l.film_id
+                    FROM \"like\" l
+                    WHERE l.user_id = ?
+                    AND l.film_id NOT IN (
+                        SELECT film_id FROM \"like\" WHERE user_id = ?
+                    )
+                    ORDER BY l.film_id
+                    """;
 
             return jdbcTemplate.queryForList(sql, Long.class, similarUserId, currentUserId);
         } catch (Exception e) {
@@ -81,14 +81,14 @@ public class RecommendationRepository extends BaseRepository<Film> {
     public List<Long> findAnyUnlikedFilms(Long userId, int limit) {
         try {
             String sql = """
-                SELECT f.id
-                FROM film f
-                WHERE f.id NOT IN (
-                    SELECT film_id FROM \"like\" WHERE user_id = ?
-                )
-                ORDER BY f.id
-                LIMIT ?
-                """;
+                    SELECT f.id
+                    FROM film f
+                    WHERE f.id NOT IN (
+                        SELECT film_id FROM \"like\" WHERE user_id = ?
+                    )
+                    ORDER BY f.id
+                    LIMIT ?
+                    """;
             return jdbcTemplate.queryForList(sql, Long.class, userId, limit);
         } catch (Exception e) {
             log.error("Error finding any unliked films for user {}: {}", userId, e.getMessage());

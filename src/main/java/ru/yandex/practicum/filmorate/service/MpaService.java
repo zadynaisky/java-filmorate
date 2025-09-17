@@ -11,7 +11,7 @@ import java.util.Collection;
 public class MpaService {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MpaService.class);
     private final MpaRepository mpaRepository;
-    
+
     public MpaService(MpaRepository mpaRepository) {
         this.mpaRepository = mpaRepository;
     }

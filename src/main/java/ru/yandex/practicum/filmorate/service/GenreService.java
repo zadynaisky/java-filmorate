@@ -13,7 +13,7 @@ import java.util.Set;
 public class GenreService {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GenreService.class);
     private final GenreRepository genreRepository;
-    
+
     public GenreService(GenreRepository genreRepository) {
         this.genreRepository = genreRepository;
     }

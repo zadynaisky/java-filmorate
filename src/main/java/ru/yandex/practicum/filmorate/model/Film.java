@@ -1,4 +1,3 @@
-// src/main/java/ru/yandex/practicum/filmorate/model/Film.java
 package ru.yandex.practicum.filmorate.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
