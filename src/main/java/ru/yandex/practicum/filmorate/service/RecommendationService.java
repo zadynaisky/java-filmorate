@@ -73,10 +73,11 @@ public class RecommendationService {
                 if (film != null) {
                     films.add(film);
                 }
-            } catch (Exception e) {
-                continue;
+            } catch (NotFoundException e) {
+                // если фильм не найден, пропускаем
             }
         }
         return films;
     }
+
 }
