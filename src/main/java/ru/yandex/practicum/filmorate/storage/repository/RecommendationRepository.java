@@ -24,6 +24,17 @@ public class RecommendationRepository extends BaseRepository<Film> {
         }
     }
 
+    // Получить всех пользователей, которые поставили лайки
+    public Set<Long> getAllUsersWithLikes() {
+        try {
+            String sql = "SELECT DISTINCT user_id FROM \"like\"";
+            List<Long> userIds = jdbcTemplate.queryForList(sql, Long.class);
+            return new HashSet<>(userIds);
+        } catch (Exception e) {
+            return new HashSet<>();
+        }
+    }
+
     // Найти пользователя с максимальным количеством общих лайков
     public Long findUserWithMostCommonLikes(Long userId) {
         try {
