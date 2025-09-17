@@ -39,9 +39,22 @@ public class RecommendationService {
         Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
         log.info("User {} has {} liked films: {}", userId, userLikedFilms.size(), userLikedFilms);
 
-        // 1. Нет лайков → пустой список
+        // 1. Нет лайков → возвращаем популярные фильмы
         if (userLikedFilms.isEmpty()) {
-            log.info("User {} has no likes, returning empty list", userId);
+            log.info("User {} has no likes, returning popular films", userId);
+            Set<Long> allUsers = recommendationRepository.getAllUsersWithLikes();
+            for (Long otherUserId : allUsers) {
+                if (!otherUserId.equals(userId)) {
+                    Set<Long> otherUserLikes = recommendationRepository.getUserLikedFilms(otherUserId);
+                    if (!otherUserLikes.isEmpty()) {
+                        List<Long> filmIds = new ArrayList<>(otherUserLikes);
+                        if (filmIds.size() > 10) {
+                            filmIds = filmIds.subList(0, 10);
+                        }
+                        return convertFilmIdsToFilms(filmIds);
+                    }
+                }
+            }
             return Collections.emptyList();
         }
 
