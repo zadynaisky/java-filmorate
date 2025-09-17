@@ -31,37 +31,27 @@ public class RecommendationService {
 
         Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
 
-        // Если пользователь не лайкал фильмы — вернём фильмы из базы
+        // Если пользователь не лайкал фильмы, возвращаем пустой список
         if (userLikedFilms.isEmpty()) {
-            List<Long> filmIds = recommendationRepository.getAllFilmsNotLikedByUser(userId);
-            return convertFilmIdsToFilms(filmIds);
+            return Collections.emptyList();
         }
 
-        Set<Long> allUsers = recommendationRepository.getAllUsersWithLikes();
+        // Находим пользователя с максимальным количеством общих лайков
+        Long similarUserId = recommendationRepository.findUserWithMostCommonLikes(userId);
 
-        for (Long otherUserId : allUsers) {
-            if (!otherUserId.equals(userId)) {
-                Set<Long> otherUserLikes = recommendationRepository.getUserLikedFilms(otherUserId);
-
-                List<Long> recommendations = new ArrayList<>();
-                for (Long filmId : otherUserLikes) {
-                    if (!userLikedFilms.contains(filmId)) {
-                        recommendations.add(filmId);
-                        if (recommendations.size() >= 10) {
-                            break;
-                        }
-                    }
-                }
-
-                if (!recommendations.isEmpty()) {
-                    return convertFilmIdsToFilms(recommendations);
-                }
-            }
+        if (similarUserId == null) {
+            return Collections.emptyList();
         }
 
-        // Если ничего не нашли — вернём любые фильмы, которых он не лайкал
-        List<Long> fallback = recommendationRepository.getAllFilmsNotLikedByUser(userId);
-        return convertFilmIdsToFilms(fallback);
+        // Получаем рекомендации от похожего пользователя
+        List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
+
+        // Ограничиваем количество рекомендаций до 10
+        if (recommendedFilmIds.size() > 10) {
+            recommendedFilmIds = recommendedFilmIds.subList(0, 10);
+        }
+
+        return convertFilmIdsToFilms(recommendedFilmIds);
     }
 
     private List<Film> convertFilmIdsToFilms(List<Long> filmIds) {
