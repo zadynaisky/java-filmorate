@@ -61,19 +61,18 @@ public class RecommendationServiceTest {
     public void testGetRecommendations_Success() {
         // Given
         Long userId = 1L;
-        Long otherUserId = 2L;
+        Long similarUserId = 2L;
         User user = new User();
         Set<Long> userLikes = Set.of(1L, 2L);
-        Set<Long> otherUserLikes = Set.of(2L, 3L, 4L);
-        Set<Long> allUsers = Set.of(1L, 2L);
+        List<Long> recommendedFilmIds = Arrays.asList(3L, 4L);
 
         Film film1 = new Film();
         Film film2 = new Film();
 
         when(userRepository.findById(userId)).thenReturn(user);
         when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(userLikes);
-        when(recommendationRepository.getAllUsersWithLikes()).thenReturn(allUsers);
-        when(recommendationRepository.getUserLikedFilms(otherUserId)).thenReturn(otherUserLikes);
+        when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(similarUserId);
+        when(recommendationRepository.getRecommendedFilmIds(userId, similarUserId)).thenReturn(recommendedFilmIds);
         when(filmRepository.findById(3L)).thenReturn(film1);
         when(filmRepository.findById(4L)).thenReturn(film2);
 
@@ -84,5 +83,23 @@ public class RecommendationServiceTest {
         assertEquals(2, recommendations.size());
         assertTrue(recommendations.contains(film1));
         assertTrue(recommendations.contains(film2));
+    }
+
+    @Test
+    public void testGetRecommendations_NoSimilarUsers() {
+        // Given
+        Long userId = 1L;
+        User user = new User();
+        Set<Long> userLikes = Set.of(1L, 2L);
+
+        when(userRepository.findById(userId)).thenReturn(user);
+        when(recommendationRepository.getUserLikedFilms(userId)).thenReturn(userLikes);
+        when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(null);
+
+        // When
+        List<Film> recommendations = recommendationService.getRecommendations(userId);
+
+        // Then
+        assertTrue(recommendations.isEmpty());
     }
 }
