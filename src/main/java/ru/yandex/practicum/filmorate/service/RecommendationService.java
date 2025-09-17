@@ -40,35 +40,30 @@ public class RecommendationService {
                 return convertFilmIdsToFilms(allUnlikedFilms);
             }
 
-            List<Film> recommendations = new ArrayList<>();
-
-            // Стратегия 1: Ищем пользователя с общими лайками
-            Long similarUserId = findMostSimilarUser(userId);
-            if (similarUserId != null) {
-                List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
-                recommendations = convertFilmIdsToFilms(recommendedFilmIds);
-                if (!recommendations.isEmpty()) {
-                    return recommendations;
-                }
-            }
-
-            // Стратегия 2: Ищем любого другого пользователя с лайками
-            Set<Long> allUsersWithLikes = recommendationRepository.getAllUsersWithLikes();
-            for (Long otherUserId : allUsersWithLikes) {
+            // Простой алгоритм: найти любого другого пользователя и взять его лайки, которых нет у текущего
+            Set<Long> allUsers = recommendationRepository.getAllUsersWithLikes();
+            
+            for (Long otherUserId : allUsers) {
                 if (!otherUserId.equals(userId)) {
-                    List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, otherUserId);
-                    recommendations = convertFilmIdsToFilms(recommendedFilmIds);
+                    Set<Long> otherUserLikes = recommendationRepository.getUserLikedFilms(otherUserId);
+                    
+                    // Находим фильмы, которые лайкнул другой пользователь, но не лайкнул текущий
+                    List<Long> recommendations = new ArrayList<>();
+                    for (Long filmId : otherUserLikes) {
+                        if (!userLikedFilms.contains(filmId)) {
+                            recommendations.add(filmId);
+                        }
+                    }
+                    
                     if (!recommendations.isEmpty()) {
-                        return recommendations;
+                        return convertFilmIdsToFilms(recommendations);
                     }
                 }
             }
 
-            // Стратегия 3: Берем любые фильмы, которые не лайкнул пользователь
+            // Если ничего не нашли, возвращаем любые фильмы, которые не лайкнул пользователь
             List<Long> allUnlikedFilms = recommendationRepository.getAllFilmsNotLikedByUser(userId);
-            recommendations = convertFilmIdsToFilms(allUnlikedFilms);
-
-            return recommendations;
+            return convertFilmIdsToFilms(allUnlikedFilms);
 
         } catch (NotFoundException e) {
             throw e;
@@ -91,13 +86,5 @@ public class RecommendationService {
             }
         }
         return films;
-    }
-
-    private Long findMostSimilarUser(Long userId) {
-        try {
-            return recommendationRepository.findUserWithMostCommonLikes(userId);
-        } catch (Exception e) {
-            return null;
-        }
     }
 }
