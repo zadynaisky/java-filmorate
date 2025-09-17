@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.storage.repository;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -12,9 +11,12 @@ import java.sql.Statement;
 import java.util.Collection;
 import java.util.Map;
 
-@RequiredArgsConstructor
 public class BaseRepository<T> {
     protected final JdbcTemplate jdbcTemplate;
+    
+    public BaseRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     protected T findOne(String query, RowMapper<T> rowMapper, Object... params) {
         try {

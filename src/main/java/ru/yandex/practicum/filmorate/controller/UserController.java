@@ -1,21 +1,27 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.RecommendationService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
 
 @RestController
 @RequestMapping("/users")
-@RequiredArgsConstructor
-@Slf4j
 public class UserController {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserController.class);
+    
     private final UserService userService;
+    private final RecommendationService recommendationService;
+    
+    public UserController(UserService userService, RecommendationService recommendationService) {
+        this.userService = userService;
+        this.recommendationService = recommendationService;
+    }
 
     @GetMapping("/{id}")
     public User findUser(@PathVariable("id") long userId) {
@@ -59,5 +65,9 @@ public class UserController {
         return userService.getCommonFriends(userId, otherId);
     }
 
-
+    @GetMapping("/{id}/recommendations")
+    public Collection<Film> getRecommendations(@PathVariable("id") long userId) {
+        log.info("Getting recommendations for user {}", userId);
+        return recommendationService.getRecommendations(userId);
+    }
 }

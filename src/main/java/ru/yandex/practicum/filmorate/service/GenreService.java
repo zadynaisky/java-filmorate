@@ -1,7 +1,5 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -11,11 +9,14 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class GenreService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GenreService.class);
     private final GenreRepository genreRepository;
+    
+    public GenreService(GenreRepository genreRepository) {
+        this.genreRepository = genreRepository;
+    }
 
     public Collection<Genre> findAll() {
         log.info("Find all genres");
