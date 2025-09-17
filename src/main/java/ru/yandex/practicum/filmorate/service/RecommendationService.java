@@ -17,8 +17,8 @@ public class RecommendationService {
     private final RecommendationRepository recommendationRepository;
     private final FilmRepository filmRepository;
 
-    public RecommendationService(RecommendationRepository recommendationRepository, 
-                                UserRepository userRepository, 
+    public RecommendationService(RecommendationRepository recommendationRepository,
+                                UserRepository userRepository,
                                 FilmRepository filmRepository) {
         this.recommendationRepository = recommendationRepository;
         this.userRepository = userRepository;
@@ -41,7 +41,6 @@ public class RecommendationService {
 
         // Находим пользователя с максимальным количеством общих лайков
         Long similarUserId = findMostSimilarUser(userId);
-        
         if (similarUserId == null) {
             log.info("No similar users for {} — empty recommendations.", userId);
             return Collections.emptyList();
