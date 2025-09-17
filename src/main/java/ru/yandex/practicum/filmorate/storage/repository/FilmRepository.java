@@ -175,7 +175,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
             if (!filmMap.containsKey(film.getId())) {
                 filmMap.put(film.getId(), film);
-                film.setGenres(new HashSet<>());
+                film.setGenres(new ArrayList<>());
             }
 
             if (genre != null) {
