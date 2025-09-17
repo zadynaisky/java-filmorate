@@ -34,10 +34,9 @@ public class RecommendationService {
             // Получаем фильмы, которые уже лайкнул текущий пользователь
             Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
 
-            // Если пользователь не лайкнул ни одного фильма → возвращаем любые нелайкнутые фильмы
+            // Если пользователь не лайкнул ни одного фильма, возвращаем пустой список
             if (userLikedFilms.isEmpty()) {
-                List<Long> allUnlikedFilms = recommendationRepository.getAllFilmsNotLikedByUser(userId);
-                return convertFilmIdsToFilms(allUnlikedFilms);
+                return Collections.emptyList();
             }
 
             // Простой алгоритм: найти любого другого пользователя и взять его лайки, которых нет у текущего
@@ -52,6 +51,10 @@ public class RecommendationService {
                     for (Long filmId : otherUserLikes) {
                         if (!userLikedFilms.contains(filmId)) {
                             recommendations.add(filmId);
+                            // Ограничиваем количество рекомендаций
+                            if (recommendations.size() >= 10) {
+                                break;
+                            }
                         }
                     }
 
@@ -61,9 +64,8 @@ public class RecommendationService {
                 }
             }
 
-            // Если ничего не нашли, возвращаем любые фильмы, которые не лайкнул пользователь
-            List<Long> allUnlikedFilms = recommendationRepository.getAllFilmsNotLikedByUser(userId);
-            return convertFilmIdsToFilms(allUnlikedFilms);
+            // Если ничего не нашли, возвращаем пустой список
+            return Collections.emptyList();
 
         } catch (NotFoundException e) {
             throw e;
