@@ -65,8 +65,8 @@ public class RecommendationRepository extends BaseRepository<Film> {
                 JOIN \"like\" l2 ON l1.film_id = l2.film_id
                 WHERE l1.user_id = ? AND l2.user_id != ?
                 GROUP BY l2.user_id
+                HAVING COUNT(*) > 0
                 ORDER BY COUNT(*) DESC
-                LIMIT 1
                 """;
 
             List<Long> users = jdbcTemplate.queryForList(sql, Long.class, userId, userId);

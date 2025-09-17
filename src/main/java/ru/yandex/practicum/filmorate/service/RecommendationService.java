@@ -31,13 +31,9 @@ public class RecommendationService {
 
         Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
 
-        // Если пользователь не лайкал фильмы — вернём все фильмы, которые он ещё не смотрел
+        // Если пользователь не лайкал фильмы, возвращаем пустой список
         if (userLikedFilms.isEmpty()) {
-            List<Long> allFilms = recommendationRepository.getAllFilmsNotLikedByUser(userId);
-            if (allFilms.size() > 10) {
-                allFilms = allFilms.subList(0, 10);
-            }
-            return convertFilmIdsToFilms(allFilms);
+            return Collections.emptyList();
         }
 
         // Находим пользователя с максимальным количеством общих лайков
@@ -49,10 +45,6 @@ public class RecommendationService {
 
         // Получаем рекомендации от похожего пользователя
         List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
-
-        if (recommendedFilmIds.size() > 10) {
-            recommendedFilmIds = recommendedFilmIds.subList(0, 10);
-        }
 
         return convertFilmIdsToFilms(recommendedFilmIds);
     }
