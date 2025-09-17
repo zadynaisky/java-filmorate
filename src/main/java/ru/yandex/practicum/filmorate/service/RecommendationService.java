@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -11,52 +10,88 @@ import ru.yandex.practicum.filmorate.storage.repository.UserRepository;
 import java.util.*;
 
 @Service
-@RequiredArgsConstructor
 public class RecommendationService {
 
     private final RecommendationRepository recommendationRepository;
     private final UserRepository userRepository;
     private final FilmRepository filmRepository;
 
+    public RecommendationService(RecommendationRepository recommendationRepository,
+                                UserRepository userRepository,
+                                FilmRepository filmRepository) {
+        this.recommendationRepository = recommendationRepository;
+        this.userRepository = userRepository;
+        this.filmRepository = filmRepository;
+    }
+
     /**
-     * Рекомендации по коллаборативной фильтрации:
-     * 1) находим пользователя с максимальным пересечением лайков,
-     * 2) берём его лайкнутые фильмы, вычитаем фильмы текущего,
-     * 3) возвращаем уникальные фильмы (в исходном порядке).
+     * Получить рекомендации фильмов для пользователя
+     *
+     * Алгоритм:
+     * 1. Найти пользователей с максимальным количеством пересечения по лайкам
+     * 2. Определить фильмы, которые один пролайкал, а другой нет
+     * 3. Рекомендовать фильмы, которым поставил лайк пользователь с похожими вкусами
      */
     public List<Film> getRecommendations(Long userId) {
-        // 1) проверяем, что пользователь существует
-        if (userRepository.findById(userId) == null) {
-            throw new NotFoundException("User with id " + userId + " not found");
-        }
-
-        // 2) лайки текущего пользователя
-        Set<Long> userLiked = recommendationRepository.getUserLikedFilms(userId);
-        if (userLiked == null || userLiked.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 3) находим наиболее похожего пользователя
-        Long similarUserId = recommendationRepository.findUserWithMostCommonLikes(userId);
-        if (similarUserId == null) {
-            return Collections.emptyList();
-        }
-
-        // 4) id фильмов, которые лайкнул похожий пользователь и не лайкнул текущий
-        List<Long> recommendedIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
-        if (recommendedIds == null || recommendedIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 5) загружаем фильмы, убирая дубли и null, сохраняя порядок
-        List<Film> result = new ArrayList<>();
-        Set<Long> seen = new LinkedHashSet<>(recommendedIds); // сохраняет порядок и удаляет дубли
-        for (Long id : seen) {
-            Film film = filmRepository.findById(id);
-            if (film != null) {
-                result.add(film);
+        try {
+            // Проверяем существование пользователя
+            if (userRepository.findById(userId) == null) {
+                throw new NotFoundException("User with id " + userId + " not found");
             }
+
+            // Получаем фильмы, которые уже лайкнул текущий пользователь
+            Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
+
+            // Если пользователь не лайкнул ни одного фильма, возвращаем пустой список
+            if (userLikedFilms.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            // Находим пользователя с максимальным количеством общих лайков
+            Long similarUserId = findMostSimilarUser(userId);
+
+            List<Long> recommendedFilmIds = new ArrayList<>();
+
+            if (similarUserId != null) {
+                // Получаем ID рекомендованных фильмов от похожего пользователя
+                recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
+            }
+
+            // Если нет рекомендаций от похожего пользователя, берем любые фильмы, которые не лайкнул пользователь
+            if (recommendedFilmIds.isEmpty()) {
+                recommendedFilmIds = recommendationRepository.getAllFilmsNotLikedByUser(userId);
+            }
+
+            // Преобразуем ID в объекты Film
+            List<Film> recommendations = new ArrayList<>();
+            for (Long filmId : recommendedFilmIds) {
+                try {
+                    Film film = filmRepository.findById(filmId);
+                    if (film != null) {
+                        recommendations.add(film);
+                    }
+                } catch (Exception e) {
+                    // Пропускаем фильмы, которые не удалось загрузить
+                    continue;
+                }
+            }
+            return recommendations;
+        } catch (NotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            // В случае любой другой ошибки возвращаем пустой список
+            return Collections.emptyList();
         }
-        return result;
+    }
+
+    /**
+     * Найти пользователя с наибольшим количеством общих лайков
+     */
+    private Long findMostSimilarUser(Long userId) {
+        try {
+            return recommendationRepository.findUserWithMostCommonLikes(userId);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
