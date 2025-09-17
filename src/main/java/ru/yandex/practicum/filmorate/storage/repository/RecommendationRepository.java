@@ -44,14 +44,27 @@ public class RecommendationRepository extends BaseRepository<Film> {
 
     // Получить рекомендации: фильмы, которые лайкнул похожий пользователь, но не текущий
     public List<Long> getRecommendedFilmIds(Long currentUserId, Long similarUserId) {
-        Set<Long> currentUserLikes = getUserLikedFilms(currentUserId);
-        Set<Long> similarUserLikes = getUserLikedFilms(similarUserId);
+        try {
+            String sql = """
+                SELECT DISTINCT l.film_id
+                FROM \"like\" l
+                WHERE l.user_id = ?
+                AND l.film_id NOT IN (
+                    SELECT COALESCE(film_id, -1) FROM \"like\" WHERE user_id = ?
+                )
+                ORDER BY l.film_id
+                """;
 
-        Set<Long> recommended = new HashSet<>(similarUserLikes);
-        recommended.removeAll(currentUserLikes);
+            return jdbcTemplate.queryForList(sql, Long.class, similarUserId, currentUserId);
+        } catch (Exception e) {
+            // Fallback: используем Set операции
+            Set<Long> currentUserLikes = getUserLikedFilms(currentUserId);
+            Set<Long> similarUserLikes = getUserLikedFilms(similarUserId);
 
-        return recommended.stream()
-                .sorted()
-                .toList();
+            Set<Long> recommended = new HashSet<>(similarUserLikes);
+            recommended.removeAll(currentUserLikes);
+
+            return new ArrayList<>(recommended);
+        }
     }
 }
