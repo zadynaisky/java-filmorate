@@ -25,54 +25,43 @@ public class RecommendationService {
     }
 
     public List<Film> getRecommendations(Long userId) {
-        try {
-            // Проверяем существование пользователя
-            if (userRepository.findById(userId) == null) {
-                throw new NotFoundException("User with id " + userId + " not found");
-            }
+        if (userRepository.findById(userId) == null) {
+            throw new NotFoundException("User with id " + userId + " not found");
+        }
 
-            // Получаем фильмы, которые уже лайкнул текущий пользователь
-            Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
+        Set<Long> userLikedFilms = recommendationRepository.getUserLikedFilms(userId);
 
-            // Если пользователь не лайкнул ни одного фильма, возвращаем пустой список
-            if (userLikedFilms.isEmpty()) {
-                return Collections.emptyList();
-            }
+        // Если пользователь не лайкал фильмы — вернём фильмы из базы
+        if (userLikedFilms.isEmpty()) {
+            List<Long> filmIds = recommendationRepository.getAllFilmsNotLikedByUser(userId);
+            return convertFilmIdsToFilms(filmIds);
+        }
 
-            // Простой алгоритм: найти любого другого пользователя и взять его лайки, которых нет у текущего
-            Set<Long> allUsers = recommendationRepository.getAllUsersWithLikes();
+        Set<Long> allUsers = recommendationRepository.getAllUsersWithLikes();
 
-            for (Long otherUserId : allUsers) {
-                if (!otherUserId.equals(userId)) {
-                    Set<Long> otherUserLikes = recommendationRepository.getUserLikedFilms(otherUserId);
+        for (Long otherUserId : allUsers) {
+            if (!otherUserId.equals(userId)) {
+                Set<Long> otherUserLikes = recommendationRepository.getUserLikedFilms(otherUserId);
 
-                    // Находим фильмы, которые лайкнул другой пользователь, но не лайкнул текущий
-                    List<Long> recommendations = new ArrayList<>();
-                    for (Long filmId : otherUserLikes) {
-                        if (!userLikedFilms.contains(filmId)) {
-                            recommendations.add(filmId);
-                            // Ограничиваем количество рекомендаций
-                            if (recommendations.size() >= 10) {
-                                break;
-                            }
+                List<Long> recommendations = new ArrayList<>();
+                for (Long filmId : otherUserLikes) {
+                    if (!userLikedFilms.contains(filmId)) {
+                        recommendations.add(filmId);
+                        if (recommendations.size() >= 10) {
+                            break;
                         }
                     }
+                }
 
-                    if (!recommendations.isEmpty()) {
-                        return convertFilmIdsToFilms(recommendations);
-                    }
+                if (!recommendations.isEmpty()) {
+                    return convertFilmIdsToFilms(recommendations);
                 }
             }
-
-            // Если ничего не нашли, возвращаем пустой список
-            return Collections.emptyList();
-
-        } catch (NotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            // В случае любой ошибки возвращаем пустой список
-            return Collections.emptyList();
         }
+
+        // Если ничего не нашли — вернём любые фильмы, которых он не лайкал
+        List<Long> fallback = recommendationRepository.getAllFilmsNotLikedByUser(userId);
+        return convertFilmIdsToFilms(fallback);
     }
 
     private List<Film> convertFilmIdsToFilms(List<Long> filmIds) {
