@@ -73,4 +73,9 @@ public class UserRepository extends BaseRepository<User> implements UserStorage 
         return findMany(sql, userRowMapper, userId, otherUserId);
     }
 
+    public void deleteById(Long id) {
+        String sql = "DELETE FROM \"USER\" WHERE id = ?";
+        delete(sql, id);
+    }
+
 }
