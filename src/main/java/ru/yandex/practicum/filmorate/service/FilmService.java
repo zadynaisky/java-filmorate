@@ -56,6 +56,10 @@ public class FilmService {
         return filmRepository.getTop(count, genreId, year);
     }
 
+    public Collection<Film> getCommon(Long userId, Long filmId) {
+        return filmRepository.findCommon(userId, filmId);
+    }
+
     public void validateLikeParams(Long filmId, Long userId) {
         if (filmId == null) {
             throw new IllegalArgumentException("filmId cannot be null");
@@ -76,5 +80,12 @@ public class FilmService {
             if (!allGenreIds.contains(x.getId()))
                 throw new NotFoundException("Genre not found");
         });
+    }
+
+    public void delete(long filmId) {
+        if (findById(filmId) == null) {
+            throw new NotFoundException("Film not found: " + filmId);
+        }
+        filmRepository.deleteById(filmId);
     }
 }

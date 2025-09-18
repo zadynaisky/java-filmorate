@@ -15,7 +15,11 @@ public class UserService {
     private final UserRepository userRepository;
 
     public User findById(long userId) {
-        return userRepository.findById(userId);
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new NotFoundException("User not found: " + userId);
+        }
+        return user;
     }
 
     public Collection<User> findAll() {
@@ -54,10 +58,12 @@ public class UserService {
     }
 
     public Collection<User> getFriends(Long userId) {
-        if (userId == null)
+        if (userId == null) {
             throw new ValidationException("userId cannot be null");
-        if (!exists(userId))
+        }
+        if (!exists(userId)) {
             throw new NotFoundException("user not found");
+        }
         return userRepository.getFriends(userId);
     }
 
@@ -71,6 +77,13 @@ public class UserService {
     }
 
     public boolean exists(long userId) {
-        return findById(userId) != null;
+        return userRepository.findById(userId) != null;
+    }
+
+    public void delete(long userId) {
+        if (!exists(userId)) {
+            throw new NotFoundException("User not found: " + userId);
+        }
+        userRepository.deleteById(userId);
     }
 }
