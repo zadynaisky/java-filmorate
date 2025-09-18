@@ -43,6 +43,12 @@ public class FilmController {
         return filmService.getTop(count);
     }
 
+    @GetMapping("/common")
+    public Collection<Film> common(@RequestParam(name = "userId") long userId,
+                                   @RequestParam(name = "friendId") long friendId) {
+        return filmService.getCommon(userId, friendId);
+    }
+
     @PutMapping("/{userId}/like/{id}")
     public void likeFilm(@PathVariable("id") long filmId, @PathVariable("userId") long userId) {
         filmService.addLike(filmId, userId);
