@@ -27,12 +27,13 @@ public class GenreRepository extends BaseRepository<Genre> {
     }
 
     public Collection<Genre> findByFilmId(long filmId) {
+        // ВАЖНО: DISTINCT убирает дубликаты жанров, сортируем по id жанра
         String sql = """
-                SELECT g.id, g.name
-                FROM film_genre as fg
-                INNER JOIN genre as g ON fg.genre_id = g.id
+                SELECT DISTINCT g.id, g.name
+                FROM film_genre AS fg
+                INNER JOIN genre AS g ON fg.genre_id = g.id
                 WHERE fg.film_id = ?
-                ORDER BY fg.id
+                ORDER BY g.id
                 """;
         return findMany(sql, genreRowMapper, filmId);
     }
