@@ -56,6 +56,10 @@ public class FilmService {
         return filmRepository.getTop(count);
     }
 
+    public Collection<Film> getCommon(Long userId, Long filmId) {
+        return filmRepository.findCommon(userId, filmId);
+    }
+
     public void validateLikeParams(Long filmId, Long userId) {
         if (filmId == null) {
             throw new IllegalArgumentException("filmId cannot be null");
