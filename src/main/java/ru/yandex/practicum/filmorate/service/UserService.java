@@ -4,15 +4,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.repository.UserRepository;
 
+import java.time.Instant;
 import java.util.Collection;
+
+import static ru.yandex.practicum.filmorate.model.EventType.FRIEND;
+import static ru.yandex.practicum.filmorate.model.OperationType.ADD;
+import static ru.yandex.practicum.filmorate.model.OperationType.REMOVE;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final EventService eventService;
 
     public User findById(long userId) {
         User user = userRepository.findById(userId);
@@ -45,6 +52,7 @@ public class UserService {
         if (user == null || friendUser == null)
             throw new NotFoundException("user cannot be null");
         userRepository.addFriend(userId, friendUserId);
+        eventService.create(new Event(Instant.now().toEpochMilli(), FRIEND, ADD, userId, friendUserId));
     }
 
     public void removeFriend(Long userId, Long friendUserId) {
@@ -55,6 +63,7 @@ public class UserService {
         if (!exists(userId) || !exists(friendUserId))
             throw new NotFoundException("user not found");
         userRepository.removeFriend(userId, friendUserId);
+        eventService.create(new Event(Instant.now().toEpochMilli(), FRIEND, REMOVE, userId, friendUserId));
     }
 
     public Collection<User> getFriends(Long userId) {

@@ -1,18 +1,25 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.repository.LikeRepository;
 
+import java.time.Instant;
 import java.util.Collection;
 
 import static java.util.stream.Collectors.toSet;
+import static ru.yandex.practicum.filmorate.model.EventType.LIKE;
+import static ru.yandex.practicum.filmorate.model.OperationType.ADD;
+import static ru.yandex.practicum.filmorate.model.OperationType.REMOVE;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FilmService {
@@ -20,6 +27,7 @@ public class FilmService {
     private final LikeRepository likeRepository;
     private final MpaService mpaService;
     private final GenreService genreService;
+    private final EventService eventService;
 
     public Film findById(long filmId) {
         var film = filmRepository.findById(filmId);
@@ -45,11 +53,14 @@ public class FilmService {
     public void addLike(Long filmId, Long userId) {
         validateLikeParams(filmId, userId);
         likeRepository.addLike(filmId, userId);
+        eventService.create(new Event(Instant.now().toEpochMilli(), LIKE, ADD, filmId, userId));
     }
 
     public void removeLike(Long filmId, Long userId) {
         validateLikeParams(filmId, userId);
         likeRepository.removeLike(filmId, userId);
+        eventService.create(new Event(Instant.now().toEpochMilli(), LIKE, REMOVE, filmId, userId));
+
     }
 
     public Collection<Film> getTop(int count, Long genreId, Integer year) {
