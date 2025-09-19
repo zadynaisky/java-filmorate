@@ -46,7 +46,6 @@ public class Film implements Comparable<Film> {
 
     @Valid
     private Set<Genre> genres = new LinkedHashSet<>(); // <-- одно поле, без дублей
-    private Set<Genre> genres = new LinkedHashSet<>();
 
     public Long getId() {
         return id;
@@ -96,17 +95,16 @@ public class Film implements Comparable<Film> {
         this.mpa = mpa;
     }
 
-    public Set<Genre> getGenres() {
+    public List<Genre> getGenres() {
         return genres;
     }
 
-    public void setGenres(Set<Genre> genres) {
-        this.genres = (genres == null) ? new LinkedHashSet<>() : new LinkedHashSet<>(genres);
+    public void setGenres(List<Genre> genres) {
+        this.genres = (genres == null) ? new ArrayList<>() : new ArrayList<>(genres);
     }
 
     @Override
     public int compareTo(Film o) {
-        // На случай null id — считаем их "меньше"
         return Comparator.nullsFirst(Long::compare).compare(getId(), o.getId());
     }
 
@@ -115,7 +113,7 @@ public class Film implements Comparable<Film> {
         if (this == o) return true;
         if (!(o instanceof Film)) return false;
         Film film = (Film) o;
-        // Для сущностей достаточно сравнивать по id
+        // для сущностей обычно достаточно сравнивать по id
         return Objects.equals(id, film.id);
     }
 
