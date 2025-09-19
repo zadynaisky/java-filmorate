@@ -101,17 +101,50 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         saveGenres(film);
     }
 
-    //заменил на LEFT JOIN, чтобы учитывать все фильмы, даже с 0 лайков
-    public Collection<Film> getTop(int count) {
+    public Collection<Film> getTop(int count, Long genreId, Integer year) {
         String sql = """
-        SELECT f.*
-        FROM "FILM" f
-        LEFT JOIN "LIKE" l ON l.film_id = f.id
-        GROUP BY f.id
-        ORDER BY COUNT(l.user_id) DESC, f.id ASC
-        LIMIT ? ;
-    """;
-        return findMany(sql, filmRowMapper, count);
+                SELECT f2.id AS film_id, f2.name, f2.description, f2.release_date, f2.duration,
+                               f2.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
+                               g.id AS genre_id, g.name AS genre_name
+                        FROM (SELECT f1.*,
+                                              COUNT(l.user_id) AS c
+                                       FROM "FILM" f1
+                                                LEFT JOIN "LIKE" as l ON l.film_id = f1.id
+                                                LEFT JOIN "FILM_GENRE" as fg ON fg.film_id = f1.id
+                                       WHERE ( ? IS NULL OR fg.genre_id = ? )
+                                         AND ( ? IS NULL OR EXTRACT(YEAR FROM f1.release_date) = ? )
+                                       GROUP BY
+                                           f1.id
+                                       ORDER BY c DESC
+                                       LIMIT ?) as f2
+                                 LEFT JOIN FILM_GENRE fg ON f2.id = fg.film_id
+                                 LEFT JOIN GENRE g ON fg.genre_id = g.id
+                                 LEFT JOIN MPA_RATING as mp ON f2.MPA_RATING_ID = mp.ID;
+                """;
+        List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
+                new FilmRowMapper2().mapRow(rs, rowNum),
+                new GenreRowMapper2().mapRow(rs, rowNum),
+                new MpaRowMapper2().mapRow(rs, rowNum)
+        }, genreId, genreId, year, year, count);
+
+        Map<Long, Film> filmMap = new LinkedHashMap<>();
+
+        for (Object[] row : rows) {
+            Film film = (Film) row[0];
+            Genre genre = (Genre) row[1];
+            Mpa mpa = (Mpa) row[2];
+            film.setMpa(mpa);
+
+            if (!filmMap.containsKey(film.getId())) {
+                filmMap.put(film.getId(), film);
+                film.setGenres(new HashSet<>());
+            }
+
+            if (genre != null) {
+                filmMap.get(film.getId()).getGenres().add(genre);
+            }
+        }
+        return filmMap.values();
     }
 
     public Collection<Film> findAll2() {
