@@ -61,7 +61,9 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
     private void saveGenres(Film film) {
         String sql = "INSERT INTO film_genre (film_id, genre_id) VALUES (?,?);";
-        List<Genre> genres = film.getGenres();
+        List<Genre> genres = film.getGenres() == null ? Collections.emptyList() : film.getGenres();
+        if (genres.isEmpty()) return;
+
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -102,23 +104,25 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     public Collection<Film> getTop(int count, Long genreId, Integer year) {
         String sql = """
                 SELECT f2.id AS film_id, f2.name, f2.description, f2.release_date, f2.duration,
-                               f2.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
-                               g.id AS genre_id, g.name AS genre_name
-                        FROM (SELECT f1.*,
-                                              COUNT(l.user_id) AS c
-                                       FROM "FILM" f1
-                                                LEFT JOIN "LIKE" as l ON l.film_id = f1.id
-                                                LEFT JOIN "FILM_GENRE" as fg ON fg.film_id = f1.id
-                                       WHERE ( ? IS NULL OR fg.genre_id = ? )
-                                         AND ( ? IS NULL OR EXTRACT(YEAR FROM f1.release_date) = ? )
-                                       GROUP BY
-                                           f1.id
-                                       ORDER BY c DESC
-                                       LIMIT ?) as f2
-                                 LEFT JOIN FILM_GENRE fg ON f2.id = fg.film_id
-                                 LEFT JOIN GENRE g ON fg.genre_id = g.id
-                                 LEFT JOIN MPA_RATING as mp ON f2.MPA_RATING_ID = mp.ID;
+                       f2.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
+                       g.id AS genre_id, g.name AS genre_name
+                FROM (
+                        SELECT f1.*,
+                               COUNT(l.user_id) AS c
+                        FROM "FILM" f1
+                        LEFT JOIN "LIKE" as l ON l.film_id = f1.id
+                        LEFT JOIN "FILM_GENRE" as fg ON fg.film_id = f1.id
+                        WHERE ( ? IS NULL OR fg.genre_id = ? )
+                          AND ( ? IS NULL OR EXTRACT(YEAR FROM f1.release_date) = ? )
+                        GROUP BY f1.id
+                        ORDER BY c DESC
+                        LIMIT ?
+                ) as f2
+                LEFT JOIN FILM_GENRE fg ON f2.id = fg.film_id
+                LEFT JOIN GENRE g ON fg.genre_id = g.id
+                LEFT JOIN MPA_RATING as mp ON f2.MPA_RATING_ID = mp.ID;
                 """;
+
         List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
                 new FilmRowMapper2().mapRow(rs, rowNum),
                 new GenreRowMapper2().mapRow(rs, rowNum),
@@ -133,13 +137,16 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             Mpa mpa = (Mpa) row[2];
             film.setMpa(mpa);
 
-            if (!filmMap.containsKey(film.getId())) {
-                filmMap.put(film.getId(), film);
-                film.setGenres(new HashSet<>());
-            }
+            filmMap.computeIfAbsent(film.getId(), id -> {
+                film.setGenres(new ArrayList<>()); // <-- LIST, не Set
+                return film;
+            });
 
             if (genre != null) {
-                filmMap.get(film.getId()).getGenres().add(genre);
+                List<Genre> list = filmMap.get(film.getId()).getGenres();
+                if (!list.contains(genre)) { // убираем дубли, сохраняем порядок
+                    list.add(genre);
+                }
             }
         }
         return filmMap.values();
@@ -148,20 +155,21 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     public Collection<Film> findAll2() {
         String sql = """
                 SELECT f.id AS film_id, f.name, f.description, f.release_date, f.duration,
-                                f.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
-                                g.id AS genre_id, g.name AS genre_name
+                       f.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
+                       g.id AS genre_id, g.name AS genre_name
                 FROM FILM f
-                    LEFT JOIN FILM_GENRE fg ON f.id = fg.film_id
-                    LEFT JOIN GENRE g ON fg.genre_id = g.id
-                    LEFT JOIN MPA_RATING as mp ON f.MPA_RATING_ID = mp.ID;
+                LEFT JOIN FILM_GENRE fg ON f.id = fg.film_id
+                LEFT JOIN GENRE g ON fg.genre_id = g.id
+                LEFT JOIN MPA_RATING as mp ON f.MPA_RATING_ID = mp.ID;
                 """;
+
         List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
                 new FilmRowMapper2().mapRow(rs, rowNum),
                 new GenreRowMapper2().mapRow(rs, rowNum),
                 new MpaRowMapper2().mapRow(rs, rowNum)
         });
 
-        Map<Long, Film> filmMap = new HashMap<>();
+        Map<Long, Film> filmMap = new LinkedHashMap<>();
 
         for (Object[] row : rows) {
             Film film = (Film) row[0];
@@ -169,13 +177,16 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             Mpa mpa = (Mpa) row[2];
             film.setMpa(mpa);
 
-            if (!filmMap.containsKey(film.getId())) {
-                filmMap.put(film.getId(), film);
-                film.setGenres(new ArrayList<>());
-            }
+            filmMap.computeIfAbsent(film.getId(), id -> {
+                film.setGenres(new ArrayList<>()); // <-- LIST, не Set
+                return film;
+            });
 
             if (genre != null) {
-                filmMap.get(film.getId()).getGenres().add(genre);
+                List<Genre> list = filmMap.get(film.getId()).getGenres();
+                if (!list.contains(genre)) { // защита от дублей
+                    list.add(genre);
+                }
             }
         }
         return new ArrayList<>(filmMap.values());
@@ -189,25 +200,28 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     public Collection<Film> findCommon(long userId, long friendId) {
         String sql = """
                 SELECT f2.id AS film_id, f2.name, f2.description, f2.release_date, f2.duration,
-                        f2.mpa_rating_id, f2.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
-                        g.id AS genre_id, g.name AS genre_name
+                       f2.mpa_rating_id, f2.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
+                       g.id AS genre_id, g.name AS genre_name
                 FROM (
                         SELECT film_id, COUNT(*) as c
                         FROM "LIKE"
-                        WHERE FILM_ID IN (SELECT l1.FILM_ID
-                                            FROM "LIKE" l1
-                                            JOIN "LIKE" l2 ON l1.film_id = l2.film_id
-                                            WHERE
-                                                l1.user_id = ?
-                                                AND l2.user_id = ?
-                                                AND l1.user_id <> l2.user_id)
-                                            GROUP BY film_id) as f1
-                        INNER JOIN film as f2 ON f1.film_id = f2.id
-                        LEFT JOIN FILM_GENRE fg ON f2.id = fg.film_id
-                        LEFT JOIN GENRE g ON fg.genre_id = g.id
-                        LEFT JOIN MPA_RATING as mp ON f2.MPA_RATING_ID = mp.ID
-                        ORDER BY f1.c DESC;
+                        WHERE FILM_ID IN (
+                            SELECT l1.FILM_ID
+                            FROM "LIKE" l1
+                            JOIN "LIKE" l2 ON l1.film_id = l2.film_id
+                            WHERE l1.user_id = ?
+                              AND l2.user_id = ?
+                              AND l1.user_id <> l2.user_id
+                        )
+                        GROUP BY film_id
+                ) as f1
+                INNER JOIN film as f2 ON f1.film_id = f2.id
+                LEFT JOIN FILM_GENRE fg ON f2.id = fg.film_id
+                LEFT JOIN GENRE g ON fg.genre_id = g.id
+                LEFT JOIN MPA_RATING as mp ON f2.MPA_RATING_ID = mp.ID
+                ORDER BY f1.c DESC;
                 """;
+
         List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
                 new FilmRowMapper2().mapRow(rs, rowNum),
                 new GenreRowMapper2().mapRow(rs, rowNum),
@@ -222,13 +236,16 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             Mpa mpa = (Mpa) row[2];
             film.setMpa(mpa);
 
-            if (!filmMap.containsKey(film.getId())) {
-                filmMap.put(film.getId(), film);
-                film.setGenres(new HashSet<>());
-            }
+            filmMap.computeIfAbsent(film.getId(), id -> {
+                film.setGenres(new ArrayList<>()); // <-- LIST, не Set
+                return film;
+            });
 
             if (genre != null) {
-                filmMap.get(film.getId()).getGenres().add(genre);
+                List<Genre> list = filmMap.get(film.getId()).getGenres();
+                if (!list.contains(genre)) { // защита от дублей
+                    list.add(genre);
+                }
             }
         }
         return filmMap.values();
