@@ -63,9 +63,17 @@ public class UserController {
         return userService.getCommonFriends(userId, otherId);
     }
 
+    // Из ветки add-recommendations
     @GetMapping("/{id}/recommendations")
     public Collection<Film> getRecommendations(@PathVariable("id") long userId) {
         log.info("Getting recommendations for user {}", userId);
         return recommendationService.getRecommendations(userId);
+    }
+
+    // Из ветки develop
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteById(@PathVariable("id") long userId) {
+        userService.delete(userId);
     }
 }

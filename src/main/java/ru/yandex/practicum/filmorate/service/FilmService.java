@@ -58,8 +58,12 @@ public class FilmService {
         likeRepository.removeLike(filmId, userId);
     }
 
-    public Collection<Film> getTop(int count) {
-        return filmRepository.getTop(count);
+    public Collection<Film> getTop(int count, Long genreId, Integer year) {
+        return filmRepository.getTop(count, genreId, year);
+    }
+
+    public Collection<Film> getCommon(Long userId, Long filmId) {
+        return filmRepository.findCommon(userId, filmId);
     }
 
     public void validateLikeParams(Long filmId, Long userId) {
@@ -82,5 +86,12 @@ public class FilmService {
             if (!allGenreIds.contains(x.getId()))
                 throw new NotFoundException("Genre not found");
         });
+    }
+
+    public void delete(long filmId) {
+        if (findById(filmId) == null) {
+            throw new NotFoundException("Film not found: " + filmId);
+        }
+        filmRepository.deleteById(filmId);
     }
 }
