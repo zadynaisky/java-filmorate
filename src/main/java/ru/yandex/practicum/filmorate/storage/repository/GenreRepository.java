@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.mapper.GenreRowMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -18,7 +19,7 @@ public class GenreRepository extends BaseRepository<Genre> {
 
     public List<Genre> findAll() {
         String sql = "SELECT id, name FROM genre ORDER BY id";
-        return findMany(sql, genreRowMapper);
+        return new ArrayList<>(findMany(sql, genreRowMapper));
     }
 
     public Genre findById(long id) {
@@ -34,6 +35,6 @@ public class GenreRepository extends BaseRepository<Genre> {
                 WHERE fg.film_id = ?
                 ORDER BY g.id
                 """;
-        return findMany(sql, genreRowMapper, filmId);
+        return new ArrayList<>(findMany(sql, genreRowMapper, filmId));
     }
 }
