@@ -5,9 +5,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.repository.GenreRepository;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 @Service
@@ -34,8 +32,7 @@ public class GenreService {
     }
 
     public List<Genre> findByFilmId(long filmId) {
-        // Доп. защита от дублей на уровне сервиса: сохраняем порядок (LinkedHashSet) и убираем повторы.
-        var deduped = new LinkedHashSet<>(genreRepository.findByFilmId(filmId));
-        return new ArrayList<>(deduped);
+        // Дубликаты устраняются в запросе репозитория + уникальным ключом в БД
+        return List.copyOf(genreRepository.findByFilmId(filmId));
     }
 }

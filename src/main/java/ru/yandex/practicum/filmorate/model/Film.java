@@ -2,33 +2,35 @@ package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-
-import java.util.Objects;
-
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Film implements Comparable<Film> {
     private Long id;
+
     @NotBlank(message = "name cannot be null or empty")
     private String name;
+
     @NotBlank(message = "description cannot be null or empty")
     @Size(max = 200, message = "description cannot be longer than 200 characters")
     private String description;
+
     @PastOrPresent(message = "releaseDate must be a date in the past or in the present")
     @ReleaseDate
     private LocalDate releaseDate;
+
     @Positive(message = "duration cannot be negative or zero")
     private int duration;
+
     @NotNull
     @Valid
     private Mpa mpa;
+
     @NotNull
     @Valid
-    private List<Genre> genres = new ArrayList<>();
+    private Set<Genre> genres = new LinkedHashSet<>(); // <-- одно поле, без дублей
 
     public Long getId() {
         return id;
@@ -78,35 +80,32 @@ public class Film implements Comparable<Film> {
         this.mpa = mpa;
     }
 
-    public List<Genre> getGenres() {
+    public Set<Genre> getGenres() {
         return genres;
     }
 
-    public void setGenres(List<Genre> genres) {
-        this.genres = genres;
+    public void setGenres(Set<Genre> genres) {
+        this.genres = (genres == null) ? new LinkedHashSet<>() : new LinkedHashSet<>(genres);
     }
 
     @Override
     public int compareTo(Film o) {
-        return Long.compare(getId(), o.getId());
+        // На случай null id — считаем их "меньше"
+        return Comparator.nullsFirst(Long::compare).compare(getId(), o.getId());
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Film)) return false;
         Film film = (Film) o;
-        return duration == film.duration &&
-                Objects.equals(name, film.name) &&
-                Objects.equals(description, film.description) &&
-                Objects.equals(releaseDate, film.releaseDate) &&
-                Objects.equals(mpa, film.mpa) &&
-                Objects.equals(genres, film.genres);
+        // Для сущностей достаточно сравнивать по id
+        return Objects.equals(id, film.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, releaseDate, duration, mpa, genres);
+        return Objects.hashCode(id);
     }
 
     @Override
