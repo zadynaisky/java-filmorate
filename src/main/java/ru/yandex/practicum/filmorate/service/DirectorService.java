@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.repository.DirectorRepository;
 
 import java.util.Collection;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -22,47 +23,40 @@ public class DirectorService {
 
     public Director findById(long id) {
         log.info("Find director by id: {}", id);
-        return directorRepository.findById(id);
+        var director = directorRepository.findById(id);
+        if (director == null) {
+            throw new NotFoundException("Director with id " + id + " not found");
+        }
+        return director;
+    }
+
+    public Set<Director> findByFilmId(long filmId) {
+        log.info("Find directors for film id: {}", filmId);
+        return directorRepository.findByFilmId(filmId);
     }
 
     public Director create(Director director) {
         log.info("Create director: {}", director);
-        if (director.getName() == null || director.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Director name cannot be empty");
-        }
         return directorRepository.create(director);
     }
 
     public Director update(Director director) {
         log.info("Update director: {}", director);
-        Director existing = directorRepository.findById(director.getId());
-        if (existing == null) {
+        if (!exists(director.getId())) {
             throw new NotFoundException("Director with id " + director.getId() + " not found");
         }
-
-        if (director.getName() == null || director.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Director name cannot be empty");
-        }
-
         return directorRepository.update(director);
     }
 
     public void delete(long id) {
         log.info("Delete director with id: {}", id);
-        directorRepository.findById(id);
+        if (!exists(id)) {
+            throw new NotFoundException("Director with id " + id + " not found");
+        }
         directorRepository.delete(id);
     }
 
-    public Collection<Director> findByFilmId(long filmId) {
-        return directorRepository.findByFilmId(filmId);
-    }
-
     public boolean exists(long id) {
-        try {
-            findById(id);
-            return true;
-        } catch (NotFoundException e) {
-            return false;
-        }
+        return directorRepository.findById(id) != null;
     }
 }

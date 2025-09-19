@@ -20,4 +20,10 @@ public class ErrorHandler {
     public ErrorResponse handleNotFound(final NotFoundException e) {
         return new ErrorResponse("Ресурс не найден.", e.getMessage());
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalArgument(final IllegalArgumentException e) {
+        return new ErrorResponse("Некорректный параметр запроса.", e.getMessage());
+    }
 }

@@ -30,7 +30,6 @@ public class Film implements Comparable<Film> {
     @NotNull
     @Valid
     private Set<Genre> genres = new HashSet<>();
-    @NotNull
     @Valid
     private Set<Director> directors = new HashSet<>();
 

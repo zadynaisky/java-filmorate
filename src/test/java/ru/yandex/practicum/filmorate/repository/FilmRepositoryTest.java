@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
         MpaRepository.class, MpaRowMapper.class,
         LikeRepository.class,
         UserRepository.class, UserRowMapper.class,
-        DirectorRepository.class, DirectorRowMapper.class})
+        DirectorRowMapper2.class})
 public class FilmRepositoryTest {
     private final FilmRepository filmRepository;
     private final GenreRepository genreRepository;

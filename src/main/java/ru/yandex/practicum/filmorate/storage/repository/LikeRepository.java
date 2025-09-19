@@ -14,7 +14,7 @@ public class LikeRepository extends BaseRepository<Long> {
     public void addLike(final Long userId, final Long filmId) {
         String sql = "INSERT INTO `like` (user_id, film_id) VALUES (?, ?)";
         log.info("Adding like to user {} and film {}", userId, filmId);
-        insertMultipleKeys(sql, userId, filmId);
+        update(sql, userId, filmId); // Исправлено на update
     }
 
     public void removeLike(final Long userId, final Long filmId) {

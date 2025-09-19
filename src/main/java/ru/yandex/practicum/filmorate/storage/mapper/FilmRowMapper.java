@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.storage.repository.GenreRepository;
 import ru.yandex.practicum.filmorate.storage.repository.MpaRepository;
 
 import java.sql.ResultSet;
@@ -15,6 +16,7 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class FilmRowMapper implements RowMapper<Film> {
     private final MpaRepository mpaRepository;
+    private final GenreRepository genreRepository;
 
     @Override
     public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -24,10 +26,10 @@ public class FilmRowMapper implements RowMapper<Film> {
         film.setDescription(rs.getString("description"));
         film.setReleaseDate(rs.getObject("release_date", LocalDate.class));
         film.setDuration(rs.getInt("duration"));
-        long mpaId = rs.getLong("mpa_rating_id");
-        Mpa mpa = mpaRepository.findById(mpaId);
+        var mpa = new Mpa();
+        mpa.setId(rs.getLong("mpa_rating_id"));
         film.setMpa(mpa);
-
         return film;
     }
 }
+

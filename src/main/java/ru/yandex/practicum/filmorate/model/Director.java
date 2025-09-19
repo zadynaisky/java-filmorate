@@ -7,6 +7,6 @@ import lombok.Data;
 public class Director {
     private Long id;
 
-    @NotBlank(message = "Director name cannot be null or empty")
+    @NotBlank(message = "Director name cannot be blank")
     private String name;
 }

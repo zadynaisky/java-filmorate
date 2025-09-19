@@ -48,7 +48,7 @@ public class UserRepository extends BaseRepository<User> implements UserStorage 
 
     public void addFriend(Long userId, Long friendUserId) {
         String sql = "INSERT INTO friend (user_id, friend_id) VALUES (?, ?);";
-        insertMultipleKeys(sql, userId, friendUserId);
+        update(sql, userId, friendUserId); // Используйте update вместо insertMultipleKeys
     }
 
     public void removeFriend(Long userId, Long friendUserId) {
@@ -71,6 +71,11 @@ public class UserRepository extends BaseRepository<User> implements UserStorage 
                     FROM friend WHERE user_id = ?);
                 """;
         return findMany(sql, userRowMapper, userId, otherUserId);
+    }
+
+    public void deleteById(Long id) {
+        String sql = "DELETE FROM \"USER\" WHERE id = ?";
+        delete(sql, id);
     }
 
 }

@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -25,13 +24,8 @@ public class BaseRepository<T> {
         }
     }
 
-
     protected Collection<T> findMany(String query, RowMapper<T> rowMapper, Object... params) {
-        try {
-            return jdbcTemplate.query(query, rowMapper, params);
-        } catch (EmptyResultDataAccessException e) {
-            return Collections.emptyList();
-        }
+        return jdbcTemplate.query(query, rowMapper, params);
     }
 
     protected boolean delete(String query, Object... params) {
@@ -40,13 +34,10 @@ public class BaseRepository<T> {
     }
 
     protected void update(String query, Object... params) {
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(query);
-            for (int i = 0; i < params.length; i++) {
-                ps.setObject(i + 1, params[i]);
-            }
-            return ps;
-        });
+        int rowsUpdated = jdbcTemplate.update(query, params);
+        if (rowsUpdated == 0) {
+            throw new NotFoundException("Data wasn't saved");
+        }
     }
 
     protected Long insert(String query, Object... params) {
@@ -67,28 +58,5 @@ public class BaseRepository<T> {
         } else {
             throw new NotFoundException("Data wasn't saved");
         }
-    }
-
-    protected Long insertMultipleKeys(String query, Object... params) {
-        GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
-
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-            for (int i = 0; i < params.length; i++) {
-                ps.setObject(i + 1, params[i]);
-            }
-            return ps;
-        }, generatedKeyHolder);
-
-        Map<String, Object> keys = generatedKeyHolder.getKeys();
-
-        if (keys != null && !keys.isEmpty()) {
-            for (Object value : keys.values()) {
-                if (value instanceof Long) {
-                    return (Long) value;
-                }
-            }
-        }
-        throw new NotFoundException("Data wasn't saved or no valid key found");
     }
 }
