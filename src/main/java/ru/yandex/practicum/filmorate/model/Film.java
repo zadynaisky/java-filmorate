@@ -4,11 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
+import java.util.*;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -34,13 +33,19 @@ public class Film implements Comparable<Film> {
     @Positive(message = "duration cannot be negative or zero")
     private int duration;
 
+    @NotNull
+    @Valid
+
     @NotNull @Valid
     private Mpa mpa;
+
+    @NotNull
 
     @NotNull @Valid
     private List<Genre> genres = new ArrayList<>();
 
     @Valid
+    private Set<Genre> genres = new LinkedHashSet<>(); // <-- одно поле, без дублей
     private Set<Genre> genres = new LinkedHashSet<>();
 
     public Long getId() {
@@ -91,16 +96,45 @@ public class Film implements Comparable<Film> {
         this.mpa = mpa;
     }
 
-    public List<Genre> getGenres() {
+    public Set<Genre> getGenres() {
         return genres;
     }
 
-    public void setGenres(List<Genre> genres) {
-        this.genres = genres;
+    public void setGenres(Set<Genre> genres) {
+        this.genres = (genres == null) ? new LinkedHashSet<>() : new LinkedHashSet<>(genres);
     }
 
     @Override
     public int compareTo(Film o) {
+        // На случай null id — считаем их "меньше"
+        return Comparator.nullsFirst(Long::compare).compare(getId(), o.getId());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Film)) return false;
+        Film film = (Film) o;
+        // Для сущностей достаточно сравнивать по id
+        return Objects.equals(id, film.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+
+    @Override
+    public String toString() {
+        return "Film{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", releaseDate=" + releaseDate +
+                ", duration=" + duration +
+                ", mpa=" + mpa +
+                ", genres=" + genres +
+                '}';
         return Comparator.nullsFirst(Long::compare).compare(this.id, o.id);
     }
 }

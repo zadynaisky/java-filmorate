@@ -7,7 +7,12 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.repository.RecommendationRepository;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -18,33 +23,43 @@ public class RecommendationService {
     private final FilmRepository filmRepository;
     private final UserService userService;
 
+    /**
+     * Рекомендации по коллаборативной фильтрации:
+     * 1) проверяем, что пользователь существует;
+     * 2) берём его лайки;
+     * 3) находим самого похожего пользователя;
+     * 4) берём фильмы, которые лайкнул похожий, но не лайкнул текущий;
+     * 5) загружаем сущности Film, убирая дубли и null (с сохранением порядка).
+     */
     public Collection<Film> getRecommendations(Long userId) {
-        // проверим, что пользователь существует (бросит NotFoundException при отсутствии)
+        // 1) проверка существования пользователя (бросит NotFoundException, если нет)
         userService.findById(userId);
 
-        // лайки текущего пользователя
+        // 2) лайки текущего пользователя
         Set<Long> userLiked = recommendationRepository.getUserLikedFilms(userId);
         if (userLiked == null || userLiked.isEmpty()) {
-            return Collections.emptyList();
+            return List.of();
         }
 
-        // наиболее похожий пользователь по пересечению лайков
+        // 3) наиболее похожий пользователь
         Long similarUserId = recommendationRepository.findUserWithMostCommonLikes(userId);
         if (similarUserId == null) {
-            return Collections.emptyList();
+            return List.of();
         }
 
-        // id фильмов, которые лайкнул похожий пользователь и не лайкнул текущий
+        // 4) id фильмов, которые лайкнул похожий пользователь и не лайкнул текущий
         List<Long> ids = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);
         if (ids == null || ids.isEmpty()) {
-            return Collections.emptyList();
+            return List.of();
         }
 
-        // грузим фильмы, убираем дубли и null, сохраняем порядок
+        // 5) загрузка фильмов, дедупликация с сохранением порядка
         Map<Long, Film> unique = new LinkedHashMap<>();
         for (Long id : ids) {
             Film f = filmRepository.findById(id);
-            if (f != null) unique.putIfAbsent(f.getId(), f);
+            if (f != null) {
+                unique.putIfAbsent(f.getId(), f);
+            }
         }
         return new ArrayList<>(unique.values());
     }

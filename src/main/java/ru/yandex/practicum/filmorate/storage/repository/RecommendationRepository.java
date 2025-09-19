@@ -17,7 +17,7 @@ public class RecommendationRepository extends BaseRepository<Film> {
         super(jdbcTemplate);
     }
 
-    // Получить все лайки пользователя
+    // Получить все лайки пользователя (вспомогательный метод)
     public Set<Long> getUserLikedFilms(Long userId) {
         try {
             String sql = "SELECT film_id FROM \"like\" WHERE user_id = ?";
@@ -48,44 +48,37 @@ public class RecommendationRepository extends BaseRepository<Film> {
         }
     }
 
-    // Получить рекомендации: фильмы, которые лайкнул похожий пользователь, но не текущий
+    // Фильмы, которые лайкнул похожий пользователь, но не текущий
     public List<Long> getRecommendedFilmIds(Long currentUserId, Long similarUserId) {
         try {
             String sql = """
                     SELECT l.film_id
-                    FROM \"like\" l
+                    FROM "like" l
                     WHERE l.user_id = ?
-                    AND l.film_id NOT IN (
-                        SELECT film_id FROM \"like\" WHERE user_id = ?
-                    )
+                      AND l.film_id NOT IN (SELECT film_id FROM "like" WHERE user_id = ?)
                     ORDER BY l.film_id
                     """;
-
             return jdbcTemplate.queryForList(sql, Long.class, similarUserId, currentUserId);
         } catch (Exception e) {
             log.error("Error getting recommended films from user {} for user {}: {}",
                     similarUserId, currentUserId, e.getMessage());
 
-            // Fallback: используем Set операции
+            // Fallback на случай проблем с БД
             Set<Long> currentUserLikes = getUserLikedFilms(currentUserId);
             Set<Long> similarUserLikes = getUserLikedFilms(similarUserId);
-
             Set<Long> recommended = new HashSet<>(similarUserLikes);
             recommended.removeAll(currentUserLikes);
-
             return new ArrayList<>(recommended);
         }
     }
 
-    // Альтернативный метод: найти любые фильмы, которые не лайкнул пользователь
+    // Альтернативный метод: любые фильмы, которые не лайкнул пользователь (можно использовать как fallback)
     public List<Long> findAnyUnlikedFilms(Long userId, int limit) {
         try {
             String sql = """
                     SELECT f.id
                     FROM film f
-                    WHERE f.id NOT IN (
-                        SELECT film_id FROM \"like\" WHERE user_id = ?
-                    )
+                    WHERE f.id NOT IN (SELECT film_id FROM "like" WHERE user_id = ?)
                     ORDER BY f.id
                     LIMIT ?
                     """;
