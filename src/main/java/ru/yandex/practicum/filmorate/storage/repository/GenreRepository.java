@@ -29,7 +29,7 @@ public class GenreRepository extends BaseRepository<Genre> {
 
     public List<Genre> findByFilmId(long filmId) {
         String sql = """
-                SELECT g.id, g.name
+                SELECT DISTINCT g.id, g.name
                 FROM film_genre fg
                 JOIN genre g ON g.id = fg.genre_id
                 WHERE fg.film_id = ?

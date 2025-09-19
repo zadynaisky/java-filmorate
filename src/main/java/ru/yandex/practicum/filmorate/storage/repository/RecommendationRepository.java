@@ -20,7 +20,7 @@ public class RecommendationRepository extends BaseRepository<Film> {
     // Получить все лайки пользователя (вспомогательный метод)
     public Set<Long> getUserLikedFilms(Long userId) {
         try {
-            String sql = "SELECT film_id FROM \"like\" WHERE user_id = ?";
+            String sql = "SELECT film_id FROM \"LIKE\" WHERE user_id = ?";
             List<Long> filmIds = jdbcTemplate.queryForList(sql, Long.class, userId);
             return new HashSet<>(filmIds);
         } catch (Exception e) {
@@ -34,8 +34,8 @@ public class RecommendationRepository extends BaseRepository<Film> {
         try {
             String sql = """
                     SELECT l2.user_id
-                    FROM "like" l1
-                    JOIN "like" l2 ON l1.film_id = l2.film_id
+                    FROM "LIKE" l1
+                    JOIN "LIKE" l2 ON l1.film_id = l2.film_id
                     WHERE l1.user_id = ? AND l2.user_id != ?
                     GROUP BY l2.user_id
                     HAVING COUNT(*) > 0
@@ -53,9 +53,9 @@ public class RecommendationRepository extends BaseRepository<Film> {
         try {
             String sql = """
                     SELECT l.film_id
-                    FROM "like" l
+                    FROM "LIKE" l
                     WHERE l.user_id = ?
-                      AND l.film_id NOT IN (SELECT film_id FROM "like" WHERE user_id = ?)
+                      AND l.film_id NOT IN (SELECT film_id FROM "LIKE" WHERE user_id = ?)
                     ORDER BY l.film_id
                     """;
             return jdbcTemplate.queryForList(sql, Long.class, similarUserId, currentUserId);
@@ -69,23 +69,6 @@ public class RecommendationRepository extends BaseRepository<Film> {
             Set<Long> recommended = new HashSet<>(similarUserLikes);
             recommended.removeAll(currentUserLikes);
             return new ArrayList<>(recommended);
-        }
-    }
-
-    // Альтернативный метод: любые фильмы, которые не лайкнул пользователь (можно использовать как fallback)
-    public List<Long> findAnyUnlikedFilms(Long userId, int limit) {
-        try {
-            String sql = """
-                    SELECT f.id
-                    FROM film f
-                    WHERE f.id NOT IN (SELECT film_id FROM "like" WHERE user_id = ?)
-                    ORDER BY f.id
-                    LIMIT ?
-                    """;
-            return jdbcTemplate.queryForList(sql, Long.class, userId, limit);
-        } catch (Exception e) {
-            log.error("Error finding any unliked films for user {}: {}", userId, e.getMessage());
-            return Collections.emptyList();
         }
     }
 }
