@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.repository;
 
-import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,23 +16,26 @@ import ru.yandex.practicum.filmorate.storage.repository.*;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Import({FilmRepository.class, FilmRowMapper.class,
         GenreRepository.class, GenreRowMapper.class,
         MpaRepository.class, MpaRowMapper.class,
         LikeRepository.class,
         UserRepository.class, UserRowMapper.class})
 public class FilmRepositoryTest {
-    private final FilmRepository filmRepository;
-    private final GenreRepository genreRepository;
-    private final MpaRepository mpaRepository;
-    private final JdbcTemplate jdbcTemplate;
+    @Autowired
+    private FilmRepository filmRepository;
+    @Autowired
+    private GenreRepository genreRepository;
+    @Autowired
+    private MpaRepository mpaRepository;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private Film film;
 
@@ -45,7 +47,7 @@ public class FilmRepositoryTest {
         film.setReleaseDate(LocalDate.parse("1975-10-19"));
         film.setDuration(133);
         film.setMpa(mpaRepository.findById(1));
-        film.setGenres(Set.of(genreRepository.findById(1)));
+        film.setGenres(List.of(genreRepository.findById(1)));
     }
 
     @Test
@@ -70,7 +72,7 @@ public class FilmRepositoryTest {
         created.setDuration(123);
         created.setReleaseDate(LocalDate.parse("2000-10-19"));
         created.setMpa(mpaRepository.findById(2));
-        created.setGenres(Set.of(genreRepository.findById(2)));
+        created.setGenres(List.of(genreRepository.findById(2)));
 
         Film updated = filmRepository.update(created);
 
@@ -91,7 +93,7 @@ public class FilmRepositoryTest {
         another.setReleaseDate(LocalDate.parse("2000-10-01"));
         another.setDuration(12);
         another.setMpa(mpaRepository.findById(1));
-        another.setGenres(Set.of(genreRepository.findById(1)));
+        another.setGenres(List.of(genreRepository.findById(1)));
         filmRepository.create(another);
 
         Collection<Film> films = filmRepository.findAll();

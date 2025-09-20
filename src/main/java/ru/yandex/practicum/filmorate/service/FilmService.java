@@ -23,6 +23,7 @@ import static ru.yandex.practicum.filmorate.model.OperationType.REMOVE;
 @Service
 @RequiredArgsConstructor
 public class FilmService {
+
     private final FilmRepository filmRepository;
     private final LikeRepository likeRepository;
     private final MpaService mpaService;
@@ -30,8 +31,13 @@ public class FilmService {
     private final EventService eventService;
 
     public Film findById(long filmId) {
-        var film = filmRepository.findById(filmId);
-        film.setMpa(mpaService.findById(film.getMpa().getId()));
+        Film film = filmRepository.findById(filmId);
+        if (film == null) {
+            throw new NotFoundException("Film not found: " + filmId);
+        }
+        if (film.getMpa() != null) {
+            film.setMpa(mpaService.findById(film.getMpa().getId()));
+        }
         film.setGenres(genreService.findByFilmId(filmId));
         return film;
     }
@@ -60,7 +66,6 @@ public class FilmService {
         validateLikeParams(filmId, userId);
         likeRepository.removeLike(filmId, userId);
         eventService.create(new Event(Instant.now().toEpochMilli(), LIKE, REMOVE, filmId, userId));
-
     }
 
     public Collection<Film> getTop(int count, Long genreId, Integer year) {
@@ -81,22 +86,31 @@ public class FilmService {
     }
 
     public void validateMpa(Mpa mpa) {
-        if (!mpaService.exists(mpa.getId()))
+        if (mpa == null) {
+            throw new IllegalArgumentException("Mpa must be provided");
+        }
+        if (!mpaService.exists(mpa.getId())) {
             throw new NotFoundException("Mpa not found");
+        }
     }
 
     public void validateGenres(Collection<Genre> genres) {
-        Collection<Long> allGenreIds = genreService.findAll().stream().map(Genre::getId).collect(toSet());
-        genres.forEach(x -> {
-            if (!allGenreIds.contains(x.getId()))
+        if (genres == null || genres.isEmpty()) {
+            return; // пустой набор допустим
+        }
+        Collection<Long> allGenreIds = genreService.findAll().stream()
+                .map(Genre::getId)
+                .collect(toSet());
+        for (Genre g : genres) {
+            if (g == null || !allGenreIds.contains(g.getId())) {
                 throw new NotFoundException("Genre not found");
-        });
+            }
+        }
     }
 
     public void delete(long filmId) {
-        if (findById(filmId) == null) {
-            throw new NotFoundException("Film not found: " + filmId);
-        }
+        // findById бросит NotFoundException, если фильма нет
+        findById(filmId);
         filmRepository.deleteById(filmId);
     }
 }
