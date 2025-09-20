@@ -1,40 +1,49 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.repository.LikeRepository;
 
+import java.time.Instant;
 import java.util.Collection;
 
 import static java.util.stream.Collectors.toSet;
+import static ru.yandex.practicum.filmorate.model.EventType.LIKE;
+import static ru.yandex.practicum.filmorate.model.OperationType.ADD;
+import static ru.yandex.practicum.filmorate.model.OperationType.REMOVE;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class FilmService {
+
     private final FilmRepository filmRepository;
     private final LikeRepository likeRepository;
     private final MpaService mpaService;
     private final GenreService genreService;
-
-    public FilmService(FilmRepository filmRepository, LikeRepository likeRepository,
-                       MpaService mpaService, GenreService genreService) {
-        this.filmRepository = filmRepository;
-        this.likeRepository = likeRepository;
-        this.mpaService = mpaService;
-        this.genreService = genreService;
-    }
+    private final EventService eventService;
 
     public Film findById(long filmId) {
-        var film = filmRepository.findById(filmId);
-        film.setMpa(mpaService.findById(film.getMpa().getId()));
+        Film film = filmRepository.findById(filmId);
+        if (film == null) {
+            throw new NotFoundException("Film not found: " + filmId);
+        }
+        if (film.getMpa() != null && film.getMpa().getId() != null) {
+            film.setMpa(mpaService.findById(film.getMpa().getId()));
+        }
         film.setGenres(genreService.findByFilmId(filmId));
         return film;
     }
 
     public Collection<Film> findAll() {
+        // Keeping your repository method name as in the conflicted file
         return filmRepository.findAll2();
     }
 
@@ -51,11 +60,13 @@ public class FilmService {
     public void addLike(Long filmId, Long userId) {
         validateLikeParams(filmId, userId);
         likeRepository.addLike(filmId, userId);
+        eventService.create(new Event(Instant.now().toEpochMilli(), LIKE, ADD, filmId, userId));
     }
 
     public void removeLike(Long filmId, Long userId) {
         validateLikeParams(filmId, userId);
         likeRepository.removeLike(filmId, userId);
+        eventService.create(new Event(Instant.now().toEpochMilli(), LIKE, REMOVE, filmId, userId));
     }
 
     public Collection<Film> getTop(int count, Long genreId, Integer year) {
@@ -76,22 +87,31 @@ public class FilmService {
     }
 
     public void validateMpa(Mpa mpa) {
-        if (!mpaService.exists(mpa.getId()))
+        if (mpa == null || mpa.getId() == null) {
+            throw new IllegalArgumentException("Mpa must be provided");
+        }
+        if (!mpaService.exists(mpa.getId())) {
             throw new NotFoundException("Mpa not found");
+        }
     }
 
     public void validateGenres(Collection<Genre> genres) {
-        Collection<Long> allGenreIds = genreService.findAll().stream().map(Genre::getId).collect(toSet());
+        if (genres == null || genres.isEmpty()) {
+            return; // optional: empty set is OK
+        }
+        Collection<Long> allGenreIds = genreService.findAll().stream()
+                .map(Genre::getId)
+                .collect(toSet());
         genres.forEach(x -> {
-            if (!allGenreIds.contains(x.getId()))
+            if (x == null || x.getId() == null || !allGenreIds.contains(x.getId())) {
                 throw new NotFoundException("Genre not found");
+            }
         });
     }
 
     public void delete(long filmId) {
-        if (findById(filmId) == null) {
-            throw new NotFoundException("Film not found: " + filmId);
-        }
+        // findById throws NotFoundException if absent
+        findById(filmId);
         filmRepository.deleteById(filmId);
     }
 }
