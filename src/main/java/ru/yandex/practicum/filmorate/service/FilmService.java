@@ -36,7 +36,10 @@ public class FilmService {
         this.genreService = genreService;
     }
 
-    public Film findById(long filmId) {
+    public Film findById(Long filmId) {
+        if (filmId == null) {
+            throw new IllegalArgumentException("filmId cannot be null");
+        }
         var film = filmRepository.findById(filmId);
         film.setMpa(mpaService.findById(film.getMpa().getId()));
         film.setGenres(genreService.findByFilmId(filmId));
@@ -100,7 +103,10 @@ public class FilmService {
         });
     }
 
-    public void delete(long filmId) {
+    public void delete(Long filmId) {
+        if (filmId == null) {
+            throw new IllegalArgumentException("filmId cannot be null");
+        }
         if (findById(filmId) == null) {
             throw new NotFoundException("Film not found: " + filmId);
         }
