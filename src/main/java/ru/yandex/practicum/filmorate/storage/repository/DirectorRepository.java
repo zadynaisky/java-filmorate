@@ -12,7 +12,7 @@ import java.util.Collection;
 public class DirectorRepository extends BaseRepository<Director> {
     private final DirectorRowMapper directorRowMapper = new DirectorRowMapper();
 
-    public DirectorRepository (JdbcTemplate jdbcTemplate) {
+    public DirectorRepository(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
@@ -47,7 +47,7 @@ public class DirectorRepository extends BaseRepository<Director> {
         return findMany(sql, directorRowMapper);
     }
 
-    public void deleteById (Long id) {
+    public void deleteById(Long id) {
         String sql = "DELETE FROM DIRECTOR WHERE id = ?;";
         boolean isDeleted = delete(sql, id);
         if (!isDeleted) throw new NotFoundException("Director not found: " + id);
