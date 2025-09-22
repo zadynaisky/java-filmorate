@@ -243,15 +243,25 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     }
 
     private void saveDirectors(Film film) {
-        if (film.getDirectors() == null || film.getDirectors().isEmpty()) return;
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+            return;
+        }
+
         String sql = "INSERT INTO film_director (film_id, director_id) VALUES (?,?);";
-        var dirs = new ArrayList<>(film.getDirectors());
-        jdbcTemplate.batchUpdate(sql, new org.springframework.jdbc.core.BatchPreparedStatementSetter() {
-            @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+        List<Director> dirs = new ArrayList<>(film.getDirectors());
+
+        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                Director d = dirs.get(i);
                 ps.setLong(1, film.getId());
-                ps.setLong(2, dirs.get(i).getId());
+                ps.setLong(2, d.getId());
             }
-            @Override public int getBatchSize() { return dirs.size(); }
+
+            @Override
+            public int getBatchSize() {
+                return dirs.size();
+            }
         });
     }
 
@@ -262,7 +272,9 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     }
 
     private void loadDirectorsFor(Map<Long, Film> filmMap) {
-        if (filmMap.isEmpty()) return;
+        if (filmMap.isEmpty()) {
+            return;
+        }
 
         String placeholders = String.join(",", Collections.nCopies(filmMap.size(), "?"));
         String sql = """
