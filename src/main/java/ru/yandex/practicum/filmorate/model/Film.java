@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.model;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
@@ -35,7 +34,6 @@ public class Film implements Comparable<Film> {
     private Set<Genre> genres = new HashSet<>();
 
     @JsonProperty("directors")
-    @JsonAlias("director")
     private Set<Director> directors = new LinkedHashSet<>();
 
     @Override
