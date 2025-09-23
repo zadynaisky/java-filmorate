@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -26,7 +27,7 @@ public class RecommendationService {
     /**
      * Коллаборативные рекомендации:
      * 1) убеждаемся, что пользователь существует;
-     * 2) выбираем самого похожего пользователя (без null/0L);
+     * 2) выбираем самого похожего пользователя (исключая null/0L);
      * 3) берём фильмы, которые лайкнул похожий, но не лайкнул текущий;
      * 4) возвращаем список фильмов в порядке, заданном SQL репозитория.
      */
@@ -36,17 +37,19 @@ public class RecommendationService {
         // 0) проверим, что пользователь существует (если нет — бросится NotFoundException)
         userService.findById(userId);
 
-        // 1) кандидаты похожих пользователей (отсортированы по количеству общих лайков)
-        List<Long> similarUsers = recommendationRepository.findUsersWithCommonLikes(userId);
-        if (similarUsers == null || similarUsers.isEmpty()) {
+        // 1) кандидаты похожих пользователей (возможно иммутабельный список из моков)
+        List<Long> similarUsersRaw = recommendationRepository.findUsersWithCommonLikes(userId);
+        if (similarUsersRaw == null || similarUsersRaw.isEmpty()) {
             log.info("No similar users found for user {}", userId);
             return Collections.emptyList();
         }
 
-        // Удаляем невалидные id (на случай моков/пустых значений)
-        similarUsers.removeIf(id -> id == null || id == 0L);
+        // Создаём НОВЫЙ мутируемый список и фильтруем невалидные id
+        List<Long> candidates = similarUsersRaw.stream()
+                .filter(id -> id != null && id > 0L)
+                .collect(Collectors.toList());
 
-        if (similarUsers.isEmpty()) {
+        if (candidates.isEmpty()) {
             log.info("Similar users list contains only null/0L for user {}", userId);
             return Collections.emptyList();
         }
@@ -54,9 +57,9 @@ public class RecommendationService {
         // 2) основной источник «самого похожего»
         Long similarUserId = recommendationRepository.findUserWithMostCommonLikes(userId);
 
-        // Страховка: не позволяем null/0L — берём первого из списка similarUsers (совпадает с ожиданиями тестов)
-        if (similarUserId == null || similarUserId == 0L) {
-            similarUserId = similarUsers.get(0);
+        // Если вернулся null/0L или id не из кандидатов — берём первого кандидата (ожидание тестов)
+        if (similarUserId == null || similarUserId <= 0L || !candidates.contains(similarUserId)) {
+            similarUserId = candidates.get(0);
         }
 
         // 3) id фильмов, которые лайкнул похожий пользователь, но не лайкнул текущий
