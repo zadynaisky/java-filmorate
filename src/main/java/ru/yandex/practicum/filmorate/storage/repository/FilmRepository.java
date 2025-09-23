@@ -374,4 +374,61 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         };
         return findRichByIdsPreservingOrder(ids);
     }
+
+    public Collection<Film> search(String query, boolean byTitle, boolean byDirector) {
+        if (!byTitle && !byDirector) {
+            return List.of();
+        }
+
+        final String pattern = "%" + query.trim().toLowerCase() + "%";
+        final String sqlTitle = """
+                SELECT f.id AS id
+                FROM film f
+                LEFT JOIN "LIKE" l on l.film_id = f.id
+                WHERE LOWER(f.name) LIKE ?
+                GROUP BY f.id
+                ORDER BY COUNT(l.user_id) DESC, f.id ASC
+                """;
+
+        final String sqlDirector = """
+                SELECT f.id AS id
+                FROM film f
+                JOIN film_director fd ON fd.film_id = f.id
+                JOIN director d ON d.id = fd.director_id
+                LEFT JOIN "LIKE" l ON l.film_id = f.id
+                WHERE LOWER(d.name) LIKE ?
+                GROUP BY f.id
+                ORDER BY COUNT(l.user_id) DESC, f.id ASC
+                """;
+
+        final String sqlBoth = """
+                WITH ids AS (
+                     SELECT f.id
+                     FROM film f
+                     WHERE LOWER(f.name) LIKE ?
+                     UNION
+                     SELECT f2.id
+                     FROM film f2
+                     JOIN film_director fd ON fd.film_id = f2.id
+                     JOIN director d ON d.id = fd.director_id
+                     WHERE LOWER(d.name) LIKE ?
+                )
+                SELECT f.id AS id
+                FROM ids
+                JOIN film f ON f.id = ids.id
+                LEFT JOIN "LIKE" l ON l.film_id = f.id
+                GROUP BY f.id
+                ORDER BY COUNT(l.user_id) DESC, f.id ASC
+                """;
+
+        List<Long> ids;
+        if (byTitle && byDirector) {
+            ids = jdbcTemplate.query(sqlBoth, (rs, rn) -> rs.getLong("id"), pattern, pattern);
+        } else if (byTitle) {
+            ids = jdbcTemplate.query(sqlTitle, (rs, rn) -> rs.getLong("id"), pattern);
+        } else {
+            ids = jdbcTemplate.query(sqlDirector, (rs, rn) -> rs.getLong("id"), pattern);
+        }
+        return findRichByIdsPreservingOrder(ids);
+    }
 }
