@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.storage.repository.DirectorRepository;
 import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.repository.LikeRepository;
 
@@ -29,6 +30,7 @@ public class FilmService {
     private final MpaService mpaService;
     private final GenreService genreService;
     private final EventService eventService;
+    private final DirectorRepository directorRepository;
 
     public Film findById(long filmId) {
         Film film = filmRepository.findById(filmId);
@@ -112,5 +114,15 @@ public class FilmService {
         // findById бросит NotFoundException, если фильма нет
         findById(filmId);
         filmRepository.deleteById(filmId);
+    }
+
+    public Collection<Film> getFilmsByDirector(Long directorId, String sortBy) {
+        if (!directorRepository.existsById(directorId)) {
+            throw new NotFoundException("Director not found: " + directorId);
+        }
+        if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
+            throw new IllegalArgumentException("Sort must be 'year' or 'likes'");
+        }
+        return filmRepository.findByDirectorSorted(directorId, sortBy);
     }
 }
