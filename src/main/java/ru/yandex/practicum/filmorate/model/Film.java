@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import lombok.Data;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
@@ -11,9 +12,9 @@ import java.util.*;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-@Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Data
 public class Film implements Comparable<Film> {
 
     @EqualsAndHashCode.Include
@@ -45,7 +46,7 @@ public class Film implements Comparable<Film> {
     private List<Genre> genres = new ArrayList<>();
 
     @Valid
-    private Set<Genre> genres = new LinkedHashSet<>(); // <-- одно поле, без дублей
+    private List<Genre> genres = new ArrayList<>(); // <- вернули List
 
     public Long getId() {
         return id;
@@ -133,6 +134,5 @@ public class Film implements Comparable<Film> {
                 ", mpa=" + mpa +
                 ", genres=" + genres +
                 '}';
-        return Comparator.nullsFirst(Long::compare).compare(this.id, o.id);
     }
 }
