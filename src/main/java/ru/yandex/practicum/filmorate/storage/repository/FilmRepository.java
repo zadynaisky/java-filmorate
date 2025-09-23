@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -19,6 +20,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 @Repository
+@Slf4j
 public class FilmRepository extends BaseRepository<Film> implements FilmStorage {
     private final FilmRowMapper filmRowMapper;
 
@@ -63,12 +65,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
     private void saveGenres(Film film) {
         String sql = "INSERT INTO film_genre (film_id, genre_id) VALUES (?,?);";
-        Set<Genre> set = (film.getGenres() == null) ? Collections.emptySet() : film.getGenres();
-        if (set.isEmpty()) return;
-
-        // batchUpdate ожидает индексируемую коллекцию
-        List<Genre> genres = new ArrayList<>(set);
-
+        List<Genre> genres = new ArrayList<>(film.getGenres());
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -143,13 +140,13 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             Mpa mpa = (Mpa) row[2];
             film.setMpa(mpa);
 
-            filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new LinkedHashSet<>()); // Set, не List
-                return film;
-            });
+            if (!filmMap.containsKey(film.getId())) {
+                filmMap.put(film.getId(), film);
+                film.setGenres(new HashSet<>());
+            }
 
             if (genre != null) {
-                filmMap.get(film.getId()).getGenres().add(genre); // Set сам уберёт дубли
+                filmMap.get(film.getId()).getGenres().add(genre);
             }
         }
         loadDirectorsFor(filmMap);
@@ -173,7 +170,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                 new MpaRowMapper2().mapRow(rs, rowNum)
         });
 
-        Map<Long, Film> filmMap = new LinkedHashMap<>();
+        Map<Long, Film> filmMap = new HashMap<>();
 
         for (Object[] row : rows) {
             Film film = (Film) row[0];
@@ -181,10 +178,10 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             Mpa mpa = (Mpa) row[2];
             film.setMpa(mpa);
 
-            filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new LinkedHashSet<>()); // Set, не List
-                return film;
-            });
+            if (!filmMap.containsKey(film.getId())) {
+                filmMap.put(film.getId(), film);
+                film.setGenres(new HashSet<>());
+            }
 
             if (genre != null) {
                 filmMap.get(film.getId()).getGenres().add(genre);
@@ -238,10 +235,10 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             Mpa mpa = (Mpa) row[2];
             film.setMpa(mpa);
 
-            filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new LinkedHashSet<>()); // Set
-                return film;
-            });
+            if (!filmMap.containsKey(film.getId())) {
+                filmMap.put(film.getId(), film);
+                film.setGenres(new HashSet<>());
+            }
 
             if (genre != null) {
                 filmMap.get(film.getId()).getGenres().add(genre);

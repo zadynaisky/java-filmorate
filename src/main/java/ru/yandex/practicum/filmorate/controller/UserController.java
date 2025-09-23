@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
@@ -66,6 +67,14 @@ public class UserController {
         return userService.getCommonFriends(userId, otherId);
     }
 
+    // from add-recommendations
+    @GetMapping("/{id}/recommendations")
+    public Collection<Film> getRecommendations(@PathVariable("id") long userId) {
+        log.info("Getting recommendations for user {}", userId);
+        return recommendationService.getRecommendations(userId);
+    }
+
+    // from develop
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable("id") long userId) {
@@ -75,11 +84,5 @@ public class UserController {
     @GetMapping("/{id}/feed")
     public Collection<Event> getFeed(@PathVariable("id") long userId) {
         return eventService.getFeed(userId);
-    }
-
-    @GetMapping("/{id}/recommendations")
-    public Collection<Film> getRecommendations(@PathVariable("id") long userId) {
-        log.info("Getting recommendations for user {}", userId);
-        return recommendationService.getRecommendations(userId);
     }
 }

@@ -34,20 +34,16 @@ public class FilmService {
     private final EventService eventService;
     private final DirectorRepository directorRepository;
 
-    public Film findById(Long filmId) {
-        if (filmId == null) {
-            throw new IllegalArgumentException("filmId cannot be null");
-        }
+    public Film findById(long filmId) {
         Film film = filmRepository.findById(filmId);
-        // обогащаем mpa и жанры
         film.setMpa(mpaService.findById(film.getMpa().getId()));
-        Collection<Genre> genres = genreService.findByFilmId(filmId); // может быть List/Collection
-        film.setGenres(new LinkedHashSet<>(genres));                  // приводим к Set<Genre>
+        // [fix @39] приводим к Set, если genreService возвращает Collection
+        film.setGenres(new LinkedHashSet<>(genreService.findByFilmId(filmId)));
         return film;
     }
 
     public Collection<Film> findAll() {
-        return filmRepository.findAll2();
+        return filmRepository.findAll();
     }
 
     public Film create(Film film) {
@@ -57,6 +53,8 @@ public class FilmService {
     }
 
     public Film update(Film newFilm) {
+        validateMpa(newFilm.getMpa());
+        validateGenres(newFilm.getGenres());
         return filmRepository.update(newFilm);
     }
 
@@ -85,27 +83,31 @@ public class FilmService {
         if (userId == null) throw new IllegalArgumentException("userId cannot be null");
     }
 
-    private void validateMpa(Mpa mpa) {
-        if (mpa == null || mpa.getId() == 0 || !mpaService.exists(mpa.getId())) {
+    public void validateMpa(Mpa mpa) {
+        // [fix @89] не сравниваем getId() с null (если он примитив)
+        if (mpa == null || !mpaService.exists(mpa.getId())) {
             throw new NotFoundException("Mpa not found");
         }
     }
 
-    private void validateGenres(Collection<Genre> genres) {
-        Set<Long> allGenreIds = genreService.findAll().stream().map(Genre::getId).collect(toSet());
+    public void validateGenres(Collection<Genre> genres) {
+        if (genres == null || genres.isEmpty()) return;
+
+        Set<Long> allGenreIds = genreService.findAll()
+                .stream()
+                .map(Genre::getId)
+                .collect(toSet());
+
         for (Genre g : genres) {
+            // [fix @105] не сравниваем g.getId() с null (если он примитив)
             if (g == null || !allGenreIds.contains(g.getId())) {
                 throw new NotFoundException("Genre not found");
             }
         }
     }
 
-    public void delete(Long filmId) {
-        if (filmId == null) {
-            throw new IllegalArgumentException("filmId cannot be null");
-        }
-        // findById уже бросит NotFoundException, если фильма нет
-        findById(filmId);
+    public void delete(long filmId) {
+        findById(filmId); // броcит NotFoundException, если нет
         filmRepository.deleteById(filmId);
     }
 
