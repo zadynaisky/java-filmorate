@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -56,6 +57,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                 film.getMpa().getId());
         film.setId(id);
         saveGenres(film);
+        saveDirectors(film);
         return film;
     }
 
@@ -89,6 +91,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         update(sql, film.getName(), film.getDescription(), film.getReleaseDate(),
                 film.getDuration(), film.getMpa().getId(), film.getId());
         updateGenres(film);
+        updateDirectors(film);
         return film;
     }
 
@@ -149,6 +152,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                 }
             }
         }
+        loadDirectorsFor(filmMap);
         return filmMap.values();
     }
 
@@ -189,6 +193,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                 }
             }
         }
+        loadDirectorsFor(filmMap);
         return new ArrayList<>(filmMap.values());
     }
 
@@ -248,6 +253,140 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                 }
             }
         }
+        loadDirectorsFor(filmMap);
         return filmMap.values();
+    }
+
+    private void saveDirectors(Film film) {
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+            return;
+        }
+
+        String sql = "INSERT INTO film_director (film_id, director_id) VALUES (?,?);";
+        List<Director> dirs = new ArrayList<>(film.getDirectors());
+
+        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                Director d = dirs.get(i);
+                ps.setLong(1, film.getId());
+                ps.setLong(2, d.getId());
+            }
+
+            @Override
+            public int getBatchSize() {
+                return dirs.size();
+            }
+        });
+    }
+
+    private void updateDirectors(Film film) {
+        String del = "DELETE FROM film_director WHERE film_id = ?;";
+        jdbcTemplate.update(del, film.getId());
+        saveDirectors(film);
+    }
+
+    private void loadDirectorsFor(Map<Long, Film> filmMap) {
+        if (filmMap.isEmpty()) {
+            return;
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(filmMap.size(), "?"));
+        String sql = """
+                SELECT fd.film_id, d.id, d.name
+                FROM film_director fd
+                JOIN director d ON d.id = fd.director_id
+                WHERE fd.film_id IN (""" + placeholders + ")";
+        Object[] args = filmMap.keySet().toArray();
+
+        jdbcTemplate.query(sql, rs -> {
+            long filmId = rs.getLong("film_id");
+            var dir = new Director();
+            dir.setId(rs.getLong("id"));
+            dir.setName(rs.getString("name"));
+            filmMap.get(filmId).getDirectors().add(dir);
+        }, args);
+    }
+
+    //Разбил на несколько частей для удобства(чтобы не писать огромный запрос)
+    private List<Long> findFilmIdsByDirectorOrderByYear(Long directorId) {
+        String sql = """
+                SELECT f.id
+                FROM film f
+                JOIN film_director fd ON fd.film_id = f.id
+                WHERE fd.director_id = ?
+                ORDER BY f.release_date, f.id
+                """;
+        return jdbcTemplate.query(sql, (rs, rn) -> rs.getLong("id"), directorId);
+    }
+
+    private List<Long> findFilmIdsByDirectorOrderByLikes(Long directorId) {
+        String sql = """
+                SELECT f.id
+                FROM film f
+                JOIN film_director fd ON fd.film_id = f.id
+                LEFT JOIN "LIKE" l ON l.film_id = f.id
+                WHERE fd.director_id = ?
+                GROUP BY f.id
+                ORDER BY COUNT(l.user_id) DESC, f.id
+                """;
+        return jdbcTemplate.query(sql, (rs, rn) -> rs.getLong("id"), directorId);
+    }
+
+    private Collection<Film> findRichByIdsPreservingOrder(List<Long> ids) {
+        if (ids.isEmpty()) return List.of();
+
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+        String sql = """
+        SELECT f.id AS film_id, f.name, f.description, f.release_date, f.duration,
+               f.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
+               g.id AS genre_id, g.name AS genre_name
+        FROM film f
+        LEFT JOIN film_genre fg ON f.id = fg.film_id
+        LEFT JOIN genre g ON fg.genre_id = g.id
+        LEFT JOIN mpa_rating mp ON f.mpa_rating_id = mp.id
+        WHERE f.id IN (""" + placeholders + ")";
+        Object[] args = ids.toArray();
+
+        List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
+                new FilmRowMapper2().mapRow(rs, rowNum),
+                new GenreRowMapper2().mapRow(rs, rowNum),
+                new MpaRowMapper2().mapRow(rs, rowNum)
+        }, args);
+
+        Map<Long, Film> filmMap = new LinkedHashMap<>();
+        for (Object[] row : rows) {
+            Film film = (Film) row[0];
+            Genre genre = (Genre) row[1];
+            Mpa mpa = (Mpa) row[2];
+            film.setMpa(mpa);
+
+            filmMap.computeIfAbsent(film.getId(), k -> {
+                film.setGenres(new HashSet<>());
+                return film;
+            });
+            if (genre != null) {
+                filmMap.get(film.getId()).getGenres().add(genre);
+            }
+        }
+
+        loadDirectorsFor(filmMap);
+
+        // Id в исходном порядке
+        List<Film> ordered = new ArrayList<>(ids.size());
+        for (Long id : ids) {
+            Film f = filmMap.get(id);
+            if (f != null) ordered.add(f);
+        }
+        return ordered;
+    }
+
+    public Collection<Film> findByDirectorSorted(Long directorId, String sortBy) {
+        List<Long> ids = switch (sortBy) {
+            case "year" -> findFilmIdsByDirectorOrderByYear(directorId);
+            case "likes" -> findFilmIdsByDirectorOrderByLikes(directorId);
+            default -> throw new IllegalArgumentException("Sort must be 'year' or 'likes'");
+        };
+        return findRichByIdsPreservingOrder(ids);
     }
 }

@@ -1,14 +1,20 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Data
+@EqualsAndHashCode(exclude = {"id"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Film implements Comparable<Film> {
     private Long id;
 
