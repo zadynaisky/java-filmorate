@@ -138,13 +138,13 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new ArrayList<>());
+                film.setGenres(new ArrayList<>()); // важно: именно список
                 return film;
             });
 
             if (genre != null) {
                 List<Genre> list = filmMap.get(film.getId()).getGenres();
-                if (!list.contains(genre)) {
+                if (!list.contains(genre)) { // защита от дублей по equals(id, name)
                     list.add(genre);
                 }
             }
@@ -178,7 +178,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new ArrayList<>());
+                film.setGenres(new ArrayList<>()); // важно: список, не Set
                 return film;
             });
 
@@ -237,7 +237,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new ArrayList<>());
+                film.setGenres(new ArrayList<>()); // список
                 return film;
             });
 
