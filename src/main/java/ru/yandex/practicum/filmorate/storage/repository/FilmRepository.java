@@ -63,8 +63,11 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
     private void saveGenres(Film film) {
         String sql = "INSERT INTO film_genre (film_id, genre_id) VALUES (?,?);";
-        List<Genre> genres = film.getGenres() == null ? Collections.emptyList() : film.getGenres();
-        if (genres.isEmpty()) return;
+        Set<Genre> set = (film.getGenres() == null) ? Collections.emptySet() : film.getGenres();
+        if (set.isEmpty()) return;
+
+        // batchUpdate ожидает индексируемую коллекцию
+        List<Genre> genres = new ArrayList<>(set);
 
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
@@ -141,15 +144,12 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new ArrayList<>()); // важно: именно список
+                film.setGenres(new LinkedHashSet<>()); // Set, не List
                 return film;
             });
 
             if (genre != null) {
-                List<Genre> list = filmMap.get(film.getId()).getGenres();
-                if (!list.contains(genre)) { // защита от дублей по equals(id, name)
-                    list.add(genre);
-                }
+                filmMap.get(film.getId()).getGenres().add(genre); // Set сам уберёт дубли
             }
         }
         loadDirectorsFor(filmMap);
@@ -182,15 +182,12 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new ArrayList<>()); // важно: список, не Set
+                film.setGenres(new LinkedHashSet<>()); // Set, не List
                 return film;
             });
 
             if (genre != null) {
-                List<Genre> list = filmMap.get(film.getId()).getGenres();
-                if (!list.contains(genre)) {
-                    list.add(genre);
-                }
+                filmMap.get(film.getId()).getGenres().add(genre);
             }
         }
         loadDirectorsFor(filmMap);
@@ -242,15 +239,12 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new ArrayList<>()); // список
+                film.setGenres(new LinkedHashSet<>()); // Set
                 return film;
             });
 
             if (genre != null) {
-                List<Genre> list = filmMap.get(film.getId()).getGenres();
-                if (!list.contains(genre)) {
-                    list.add(genre);
-                }
+                filmMap.get(film.getId()).getGenres().add(genre);
             }
         }
         loadDirectorsFor(filmMap);
@@ -287,9 +281,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     }
 
     private void loadDirectorsFor(Map<Long, Film> filmMap) {
-        if (filmMap.isEmpty()) {
-            return;
-        }
+        if (filmMap.isEmpty()) return;
 
         String placeholders = String.join(",", Collections.nCopies(filmMap.size(), "?"));
         String sql = """
@@ -308,7 +300,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         }, args);
     }
 
-    //Разбил на несколько частей для удобства(чтобы не писать огромный запрос)
+    // Разбил на несколько частей для удобства
     private List<Long> findFilmIdsByDirectorOrderByYear(Long directorId) {
         String sql = """
                 SELECT f.id
@@ -362,7 +354,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), k -> {
-                film.setGenres(new HashSet<>());
+                film.setGenres(new LinkedHashSet<>()); // Set
                 return film;
             });
             if (genre != null) {
@@ -372,7 +364,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
         loadDirectorsFor(filmMap);
 
-        // Id в исходном порядке
+        // вернуть в исходном порядке ids
         List<Film> ordered = new ArrayList<>(ids.size());
         for (Long id : ids) {
             Film f = filmMap.get(id);

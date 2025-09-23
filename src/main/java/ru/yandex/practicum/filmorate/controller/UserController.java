@@ -19,16 +19,10 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
     private final EventService eventService;
     private final RecommendationService recommendationService;
-
-    public UserController(UserService userService, RecommendationService recommendationService) {
-        this.userService = userService;
-        this.recommendationService = recommendationService;
-    }
 
     @GetMapping("/{id}")
     public User findUser(@PathVariable("id") long userId) {
