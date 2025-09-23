@@ -138,13 +138,13 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new ArrayList<>()); // <-- LIST, не Set
+                film.setGenres(new ArrayList<>());
                 return film;
             });
 
             if (genre != null) {
                 List<Genre> list = filmMap.get(film.getId()).getGenres();
-                if (!list.contains(genre)) { // убираем дубли, сохраняем порядок
+                if (!list.contains(genre)) {
                     list.add(genre);
                 }
             }
@@ -178,13 +178,13 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new ArrayList<>()); // <-- LIST, не Set
+                film.setGenres(new ArrayList<>());
                 return film;
             });
 
             if (genre != null) {
                 List<Genre> list = filmMap.get(film.getId()).getGenres();
-                if (!list.contains(genre)) { // защита от дублей
+                if (!list.contains(genre)) {
                     list.add(genre);
                 }
             }
@@ -200,7 +200,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     public Collection<Film> findCommon(long userId, long friendId) {
         String sql = """
                 SELECT f2.id AS film_id, f2.name, f2.description, f2.release_date, f2.duration,
-                       f2.mpa_rating_id, f2.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
+                       f2.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
                        g.id AS genre_id, g.name AS genre_name
                 FROM (
                         SELECT film_id, COUNT(*) as c
@@ -237,13 +237,13 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             film.setMpa(mpa);
 
             filmMap.computeIfAbsent(film.getId(), id -> {
-                film.setGenres(new ArrayList<>()); // <-- LIST, не Set
+                film.setGenres(new ArrayList<>());
                 return film;
             });
 
             if (genre != null) {
                 List<Genre> list = filmMap.get(film.getId()).getGenres();
-                if (!list.contains(genre)) { // защита от дублей
+                if (!list.contains(genre)) {
                     list.add(genre);
                 }
             }
