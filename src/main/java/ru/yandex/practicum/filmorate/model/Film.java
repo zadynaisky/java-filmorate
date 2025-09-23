@@ -2,12 +2,19 @@ package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Film implements Comparable<Film> {
+    @EqualsAndHashCode.Include
     private Long id;
 
     @NotBlank(message = "name cannot be null or empty")
@@ -30,93 +37,10 @@ public class Film implements Comparable<Film> {
 
     @NotNull
     @Valid
-    private List<Genre> genres = new ArrayList<>(); // <- вернули List
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public LocalDate getReleaseDate() {
-        return releaseDate;
-    }
-
-    public void setReleaseDate(LocalDate releaseDate) {
-        this.releaseDate = releaseDate;
-    }
-
-    public int getDuration() {
-        return duration;
-    }
-
-    public void setDuration(int duration) {
-        this.duration = duration;
-    }
-
-    public Mpa getMpa() {
-        return mpa;
-    }
-
-    public void setMpa(Mpa mpa) {
-        this.mpa = mpa;
-    }
-
-    public List<Genre> getGenres() {
-        return genres;
-    }
-
-    public void setGenres(List<Genre> genres) {
-        this.genres = (genres == null) ? new ArrayList<>() : new ArrayList<>(genres);
-    }
+    private List<Genre> genres = new ArrayList<>();
 
     @Override
     public int compareTo(Film o) {
         return Comparator.nullsFirst(Long::compare).compare(getId(), o.getId());
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Film)) return false;
-        Film film = (Film) o;
-        // для сущностей обычно достаточно сравнивать по id
-        return Objects.equals(id, film.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(id);
-    }
-
-    @Override
-    public String toString() {
-        return "Film{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", releaseDate=" + releaseDate +
-                ", duration=" + duration +
-                ", mpa=" + mpa +
-                ", genres=" + genres +
-                '}';
     }
 }
