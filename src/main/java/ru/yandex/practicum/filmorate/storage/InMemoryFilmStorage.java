@@ -12,7 +12,9 @@ import java.util.Map;
 
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
+    
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(InMemoryFilmStorage.class);
+    
     private final Map<Long, Film> films = new HashMap<>();
 
     @Override
