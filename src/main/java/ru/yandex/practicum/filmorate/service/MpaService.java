@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -8,13 +10,11 @@ import ru.yandex.practicum.filmorate.storage.repository.MpaRepository;
 import java.util.Collection;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class MpaService {
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MpaService.class);
-    private final MpaRepository mpaRepository;
 
-    public MpaService(MpaRepository mpaRepository) {
-        this.mpaRepository = mpaRepository;
-    }
+    private final MpaRepository mpaRepository;
 
     public Collection<Mpa> findAll() {
         log.info("Find all mpa");
@@ -24,8 +24,9 @@ public class MpaService {
     public Mpa findById(long mpaId) {
         log.info("Find mpa by id {}", mpaId);
         var mpa = mpaRepository.findById(mpaId);
-        if (mpa == null)
+        if (mpa == null) {
             throw new NotFoundException("Mpa with id " + mpaId + " not found");
+        }
         return mpa;
     }
 
