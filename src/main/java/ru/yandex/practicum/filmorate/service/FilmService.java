@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -119,5 +120,36 @@ public class FilmService {
             throw new IllegalArgumentException("Sort must be 'year' or 'likes'");
         }
         return filmRepository.findByDirectorSorted(directorId, sortBy);
+    }
+
+    public Collection<Film> search(String query, String by) {
+
+        if (query == null || query.trim().isEmpty()) {
+            throw new ValidationException("query must not be empty");
+        }
+
+        boolean byTitle = false;
+        boolean byDirector = false;
+
+        if (by == null || by.trim().isEmpty()) {
+            throw new ValidationException("parameter 'by' must contain only: title and/or director");
+        }
+
+        for (String token : by.toLowerCase().split(",")) {
+            String t = token.trim();
+            if (t.isEmpty()) continue;
+            switch (t) {
+                case "title" -> byTitle = true;
+                case "director" -> byDirector = true;
+                default -> throw new ValidationException(
+                        "parameter 'by' must contain only: title and/or director"
+                );
+            }
+        }
+
+        if (!byTitle && !byDirector) {
+            throw new ValidationException("parameter 'by' must contain at least one of: title, director");
+        }
+        return filmRepository.search(query, byTitle, byDirector);
     }
 }
