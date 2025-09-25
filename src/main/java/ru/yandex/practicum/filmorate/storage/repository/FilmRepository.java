@@ -135,6 +135,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                         ps.setLong(1, film.getId());
                         ps.setLong(2, genreIds.get(i));
                     }
+
                     @Override
                     public int getBatchSize() {
                         return genreIds.size();
@@ -372,14 +373,14 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
         String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
         String sql = """
-        SELECT f.id AS film_id, f.name, f.description, f.release_date, f.duration,
-               f.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
-               g.id AS genre_id, g.name AS genre_name
-        FROM film f
-        LEFT JOIN film_genre fg ON f.id = fg.film_id
-        LEFT JOIN genre g ON fg.genre_id = g.id
-        LEFT JOIN mpa_rating mp ON f.mpa_rating_id = mp.id
-        WHERE f.id IN (""" + placeholders + ")";
+                SELECT f.id AS film_id, f.name, f.description, f.release_date, f.duration,
+                       f.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
+                       g.id AS genre_id, g.name AS genre_name
+                FROM film f
+                LEFT JOIN film_genre fg ON f.id = fg.film_id
+                LEFT JOIN genre g ON fg.genre_id = g.id
+                LEFT JOIN mpa_rating mp ON f.mpa_rating_id = mp.id
+                WHERE f.id IN (""" + placeholders + ")";
         Object[] args = ids.toArray();
 
         List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
