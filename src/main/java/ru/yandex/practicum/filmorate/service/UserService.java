@@ -103,4 +103,11 @@ public class UserService {
         }
         userRepository.deleteById(userId);
     }
+
+    public Collection<Event> getFeed(Long userId) {
+        if (!exists(userId)) {
+            throw new NotFoundException("User not found: " + userId);
+        }
+        return eventService.getFeed(userId);
+    }
 }

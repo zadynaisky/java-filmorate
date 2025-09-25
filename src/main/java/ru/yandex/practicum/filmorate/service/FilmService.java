@@ -82,6 +82,8 @@ public class FilmService {
     private void validateLikeParams(Long filmId, Long userId) {
         if (filmId == null) throw new IllegalArgumentException("filmId cannot be null");
         if (userId == null) throw new IllegalArgumentException("userId cannot be null");
+        if (filmId < 1) throw new NotFoundException("filmId cannot be less than 1");
+        if (userId < 1) throw new NotFoundException("userId cannot be less than 1");
     }
 
     public void validateMpa(Mpa mpa) {
