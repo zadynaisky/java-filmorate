@@ -34,10 +34,18 @@ public class UserService {
     }
 
     public User create(final User user) {
+        user.setLogin(user.getLogin().trim());
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
         return userRepository.create(user);
     }
 
     public User update(User newUser) {
+        newUser.setLogin(newUser.getLogin().trim());
+        if (newUser.getName() == null || newUser.getName().isBlank()) {
+            newUser.setName(newUser.getLogin());
+        }
         return userRepository.update(newUser);
     }
 

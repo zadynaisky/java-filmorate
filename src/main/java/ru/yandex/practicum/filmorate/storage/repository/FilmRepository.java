@@ -18,6 +18,7 @@ import ru.yandex.practicum.filmorate.storage.mapper.MpaRowMapper2;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 @Slf4j
@@ -31,18 +32,18 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
     @Override
     public Film findById(Long id) {
-        String sql = "SELECT * FROM film WHERE id = ?;";
-        var film = findOne(sql, filmRowMapper, id);
-        if (film == null) {
-            throw new NotFoundException("Film not found");
-        }
-        return film;
+        var list = findRichByIdsPreservingOrder(List.of(id));
+        if (list.isEmpty()) throw new NotFoundException("Film not found: " + id);
+        Film f = list.iterator().next();
+        normalizeFilm(f);
+        return f;
     }
 
     @Override
     public Collection<Film> findAll() {
-        String sql = "SELECT * FROM film;";
-        return findMany(sql, filmRowMapper);
+        var films = new ArrayList<>(findAll2());
+        films.forEach(this::normalizeFilm);
+        return films;
     }
 
     @Override
@@ -60,12 +61,23 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         film.setId(id);
         saveGenres(film);
         saveDirectors(film);
-        return film;
+
+        Film saved = findRichByIdOrThrow(id);
+        normalizeFilm(saved);
+        return saved;
     }
 
     private void saveGenres(Film film) {
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
+            return;
+        }
         String sql = "INSERT INTO film_genre (film_id, genre_id) VALUES (?,?);";
-        List<Genre> genres = new ArrayList<>(film.getGenres());
+        List<Genre> genres = film.getGenres().stream()
+                .filter(g -> g != null && g.getId() != null && g.getId() > 0)
+                .toList();
+
+        if (genres.isEmpty()) return;
+
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -92,16 +104,43 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                 film.getDuration(), film.getMpa().getId(), film.getId());
         updateGenres(film);
         updateDirectors(film);
-        return film;
+
+        Film saved = findRichByIdOrThrow(film.getId());
+        normalizeFilm(saved);
+        return saved;
     }
 
     private void updateGenres(Film film) {
-        String sql = """
-                DELETE FROM film_genre
-                WHERE film_id = ?;
-                """;
-        update(sql, film.getId());
-        saveGenres(film);
+        jdbcTemplate.update("DELETE FROM film_genre WHERE film_id = ?", film.getId());
+
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
+            return; // жанры очищены
+        }
+
+        List<Long> genreIds = film.getGenres().stream()
+                .filter(Objects::nonNull)
+                .map(Genre::getId)
+                .filter(Objects::nonNull)
+                .filter(id -> id > 0)
+                .distinct()
+                .toList();
+
+        if (genreIds.isEmpty()) return;
+
+        jdbcTemplate.batchUpdate(
+                "INSERT INTO film_genre (film_id, genre_id) VALUES (?, ?)",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setLong(1, film.getId());
+                        ps.setLong(2, genreIds.get(i));
+                    }
+                    @Override
+                    public int getBatchSize() {
+                        return genreIds.size();
+                    }
+                }
+        );
     }
 
     public Collection<Film> getTop(int count, Long genreId, Integer year) {
@@ -118,7 +157,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                         WHERE ( ? IS NULL OR fg.genre_id = ? )
                           AND ( ? IS NULL OR EXTRACT(YEAR FROM f1.release_date) = ? )
                         GROUP BY f1.id
-                        ORDER BY c DESC
+                        ORDER BY c DESC, f1.id
                         LIMIT ?
                 ) as f2
                 LEFT JOIN FILM_GENRE fg ON f2.id = fg.film_id
@@ -150,6 +189,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             }
         }
         loadDirectorsFor(filmMap);
+        filmMap.values().forEach(this::normalizeFilm);
         return filmMap.values();
     }
 
@@ -188,6 +228,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             }
         }
         loadDirectorsFor(filmMap);
+        filmMap.values().forEach(this::normalizeFilm);
         return new ArrayList<>(filmMap.values());
     }
 
@@ -218,7 +259,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                 LEFT JOIN FILM_GENRE fg ON f2.id = fg.film_id
                 LEFT JOIN GENRE g ON fg.genre_id = g.id
                 LEFT JOIN MPA_RATING as mp ON f2.MPA_RATING_ID = mp.ID
-                ORDER BY f1.c DESC;
+                ORDER BY f1.c DESC, f2.id;
                 """;
 
         List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
@@ -245,6 +286,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             }
         }
         loadDirectorsFor(filmMap);
+        filmMap.values().forEach(this::normalizeFilm);
         return filmMap.values();
     }
 
@@ -272,6 +314,9 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     }
 
     private void updateDirectors(Film film) {
+        if (film.getDirectors() == null) {
+            return;
+        }
         String del = "DELETE FROM film_director WHERE film_id = ?;";
         jdbcTemplate.update(del, film.getId());
         saveDirectors(film);
@@ -365,7 +410,10 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         List<Film> ordered = new ArrayList<>(ids.size());
         for (Long id : ids) {
             Film f = filmMap.get(id);
-            if (f != null) ordered.add(f);
+            if (f != null) {
+                normalizeFilm(f);
+                ordered.add(f);
+            }
         }
         return ordered;
     }
@@ -434,5 +482,25 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             ids = jdbcTemplate.query(sqlDirector, (rs, rn) -> rs.getLong("id"), pattern);
         }
         return findRichByIdsPreservingOrder(ids);
+    }
+
+    private Film findRichByIdOrThrow(Long id) {
+        var list = findRichByIdsPreservingOrder(List.of(id));
+        if (list.isEmpty()) throw new NotFoundException("Film not found: " + id);
+        return list.iterator().next();
+    }
+
+    private void normalizeFilm(Film f) {
+        if (f == null) return;
+        if (f.getGenres() != null) {
+            f.setGenres(f.getGenres().stream()
+                    .sorted(Comparator.comparingLong(Genre::getId))
+                    .collect(Collectors.toCollection(LinkedHashSet::new)));
+        }
+        if (f.getDirectors() != null) {
+            f.setDirectors(f.getDirectors().stream()
+                    .sorted(Comparator.comparingLong(Director::getId))
+                    .collect(Collectors.toCollection(LinkedHashSet::new)));
+        }
     }
 }

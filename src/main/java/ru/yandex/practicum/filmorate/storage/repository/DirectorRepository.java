@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.mapper.DirectorRowMapper;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 @Repository
@@ -27,9 +28,11 @@ public class DirectorRepository extends BaseRepository<Director> {
         if (director.getId() == null) {
             throw new NotFoundException("Director id is required");
         }
-
         String sql = "UPDATE DIRECTOR SET name = ? WHERE id = ?;";
-        update(sql, director.getName(), director.getId());
+        int updated = jdbcTemplate.update(sql, director.getName(), director.getId());
+        if (updated == 0) {
+            throw new NotFoundException("Director not found: " + director.getId());
+        }
         return findById(director.getId());
     }
 
@@ -44,7 +47,7 @@ public class DirectorRepository extends BaseRepository<Director> {
 
     public Collection<Director> findAll() {
         String sql = "SELECT id, name FROM DIRECTOR ORDER BY id;";
-        return findMany(sql, directorRowMapper);
+        return new ArrayList<>(findMany(sql, directorRowMapper));
     }
 
     public void deleteById(Long id) {
