@@ -72,7 +72,12 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
             return;
         }
         String sql = "INSERT INTO film_genre (film_id, genre_id) VALUES (?,?);";
-        List<Genre> genres = new ArrayList<>(film.getGenres());
+        List<Genre> genres = film.getGenres().stream()
+                .filter(g -> g != null && g.getId() != null && g.getId() > 0)
+                .toList();
+
+        if (genres.isEmpty()) return;
+
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -106,15 +111,36 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     }
 
     private void updateGenres(Film film) {
-        if (film.getGenres() == null) {
-            return;
+        jdbcTemplate.update("DELETE FROM film_genre WHERE film_id = ?", film.getId());
+
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
+            return; // жанры очищены
         }
-        String sql = """
-                DELETE FROM film_genre
-                WHERE film_id = ?;
-                """;
-        update(sql, film.getId());
-        saveGenres(film);
+
+        List<Long> genreIds = film.getGenres().stream()
+                .filter(Objects::nonNull)
+                .map(Genre::getId)
+                .filter(Objects::nonNull)
+                .filter(id -> id > 0)
+                .distinct()
+                .toList();
+
+        if (genreIds.isEmpty()) return;
+
+        jdbcTemplate.batchUpdate(
+                "INSERT INTO film_genre (film_id, genre_id) VALUES (?, ?)",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setLong(1, film.getId());
+                        ps.setLong(2, genreIds.get(i));
+                    }
+                    @Override
+                    public int getBatchSize() {
+                        return genreIds.size();
+                    }
+                }
+        );
     }
 
     public Collection<Film> getTop(int count, Long genreId, Integer year) {
