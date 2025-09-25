@@ -15,6 +15,8 @@ import ru.yandex.practicum.filmorate.storage.repository.LikeRepository;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 import static ru.yandex.practicum.filmorate.model.EventType.LIKE;
@@ -25,6 +27,7 @@ import static ru.yandex.practicum.filmorate.model.OperationType.REMOVE;
 @Service
 @RequiredArgsConstructor
 public class FilmService {
+
     private final FilmRepository filmRepository;
     private final LikeRepository likeRepository;
     private final MpaService mpaService;
@@ -33,14 +36,15 @@ public class FilmService {
     private final DirectorRepository directorRepository;
 
     public Film findById(long filmId) {
-        var film = filmRepository.findById(filmId);
+        Film film = filmRepository.findById(filmId);
         film.setMpa(mpaService.findById(film.getMpa().getId()));
-        film.setGenres(genreService.findByFilmId(filmId));
+        // [fix @39] приводим к Set, если genreService возвращает Collection
+        film.setGenres(new LinkedHashSet<>(genreService.findByFilmId(filmId)));
         return film;
     }
 
     public Collection<Film> findAll() {
-        return filmRepository.findAll2();
+        return filmRepository.findAll();
     }
 
     public Film create(Film film) {
@@ -50,6 +54,8 @@ public class FilmService {
     }
 
     public Film update(Film newFilm) {
+        validateMpa(newFilm.getMpa());
+        validateGenres(newFilm.getGenres());
         return filmRepository.update(newFilm);
     }
 
@@ -63,43 +69,46 @@ public class FilmService {
         validateLikeParams(filmId, userId);
         likeRepository.removeLike(filmId, userId);
         eventService.create(new Event(Instant.now().toEpochMilli(), LIKE, REMOVE, filmId, userId));
-
     }
 
     public Collection<Film> getTop(int count, Long genreId, Integer year) {
         return filmRepository.getTop(count, genreId, year);
     }
 
-    public Collection<Film> getCommon(Long userId, Long filmId) {
-        return filmRepository.findCommon(userId, filmId);
+    public Collection<Film> getCommon(Long userId, Long friendId) {
+        return filmRepository.findCommon(userId, friendId);
     }
 
-    public void validateLikeParams(Long filmId, Long userId) {
-        if (filmId == null) {
-            throw new IllegalArgumentException("filmId cannot be null");
-        }
-        if (userId == null) {
-            throw new IllegalArgumentException("userId cannot be null");
-        }
+    private void validateLikeParams(Long filmId, Long userId) {
+        if (filmId == null) throw new IllegalArgumentException("filmId cannot be null");
+        if (userId == null) throw new IllegalArgumentException("userId cannot be null");
     }
 
     public void validateMpa(Mpa mpa) {
-        if (!mpaService.exists(mpa.getId()))
+        // [fix @89] не сравниваем getId() с null (если он примитив)
+        if (mpa == null || !mpaService.exists(mpa.getId())) {
             throw new NotFoundException("Mpa not found");
+        }
     }
 
     public void validateGenres(Collection<Genre> genres) {
-        Collection<Long> allGenreIds = genreService.findAll().stream().map(Genre::getId).collect(toSet());
-        genres.forEach(x -> {
-            if (!allGenreIds.contains(x.getId()))
+        if (genres == null || genres.isEmpty()) return;
+
+        Set<Long> allGenreIds = genreService.findAll()
+                .stream()
+                .map(Genre::getId)
+                .collect(toSet());
+
+        for (Genre g : genres) {
+            // [fix @105] не сравниваем g.getId() с null (если он примитив)
+            if (g == null || !allGenreIds.contains(g.getId())) {
                 throw new NotFoundException("Genre not found");
-        });
+            }
+        }
     }
 
     public void delete(long filmId) {
-        if (findById(filmId) == null) {
-            throw new NotFoundException("Film not found: " + filmId);
-        }
+        findById(filmId); // броcит NotFoundException, если нет
         filmRepository.deleteById(filmId);
     }
 

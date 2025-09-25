@@ -14,6 +14,7 @@ import java.util.Map;
 
 @RequiredArgsConstructor
 public class BaseRepository<T> {
+
     protected final JdbcTemplate jdbcTemplate;
 
     protected T findOne(String query, RowMapper<T> rowMapper, Object... params) {
