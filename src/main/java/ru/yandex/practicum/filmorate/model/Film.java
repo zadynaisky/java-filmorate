@@ -3,10 +3,7 @@ package ru.yandex.practicum.filmorate.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.ReleaseDate;
@@ -35,7 +32,7 @@ public class Film implements Comparable<Film> {
     @ReleaseDate
     private LocalDate releaseDate;
 
-    @PositiveOrZero(message = "duration cannot be negative or zero")
+    @Positive(message = "duration cannot be negative or zero")
     private int duration;
 
     @NotNull
