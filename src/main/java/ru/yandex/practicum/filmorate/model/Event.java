@@ -7,13 +7,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class Event {
-    long eventId;
-    long timestamp;
+    private long eventId;
+    private long timestamp;
     @JsonProperty("eventType")
-    EventType type;
-    OperationType operation;
-    long userId;
-    long entityId;
+    private EventType type;
+    private OperationType operation;
+    private long userId;
+    private long entityId;
 
     public Event(long timestamp, EventType type, OperationType operation, long userId, long entityId) {
         this.timestamp = timestamp;

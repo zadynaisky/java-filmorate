@@ -3,8 +3,6 @@ package ru.yandex.practicum.filmorate.storage.repository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.*;
-
 @Repository
 public class LikeRepository extends BaseRepository<Long> {
     public LikeRepository(JdbcTemplate jdbcTemplate) {
@@ -12,7 +10,7 @@ public class LikeRepository extends BaseRepository<Long> {
     }
 
     public void addLike(final Long userId, final Long filmId) {
-        String sql = "INSERT INTO \"LIKE\" (user_id, film_id) VALUES (?, ?)";
+        String sql = "MERGE INTO \"LIKE\" (user_id, film_id) KEY (user_id, film_id) VALUES (?, ?);";
         insertMultipleKeys(sql, userId, filmId);
     }
 

@@ -14,6 +14,7 @@ public class DirectorService {
     private final DirectorRepository directors;
 
     public Director create(Director director) {
+        director.setId(null);
         return directors.create(director);
     }
 

@@ -5,10 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Event;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.storage.repository.DirectorRepository;
 import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.repository.LikeRepository;
@@ -79,45 +76,14 @@ public class FilmService {
         return filmRepository.findCommon(userId, friendId);
     }
 
-    private void validateLikeParams(Long filmId, Long userId) {
-        if (filmId == null) throw new IllegalArgumentException("filmId cannot be null");
-        if (userId == null) throw new IllegalArgumentException("userId cannot be null");
-    }
-
-    public void validateMpa(Mpa mpa) {
-        // [fix @89] не сравниваем getId() с null (если он примитив)
-        if (mpa == null || !mpaService.exists(mpa.getId())) {
-            throw new NotFoundException("Mpa not found");
-        }
-    }
-
-    public void validateGenres(Collection<Genre> genres) {
-        if (genres == null || genres.isEmpty()) return;
-
-        Set<Long> allGenreIds = genreService.findAll()
-                .stream()
-                .map(Genre::getId)
-                .collect(toSet());
-
-        for (Genre g : genres) {
-            // [fix @105] не сравниваем g.getId() с null (если он примитив)
-            if (g == null || !allGenreIds.contains(g.getId())) {
-                throw new NotFoundException("Genre not found");
-            }
-        }
-    }
-
     public void delete(long filmId) {
         findById(filmId); // броcит NotFoundException, если нет
         filmRepository.deleteById(filmId);
     }
 
-    public Collection<Film> getFilmsByDirector(Long directorId, String sortBy) {
+    public Collection<Film> getFilmsByDirector(Long directorId, SortBy sortBy) {
         if (!directorRepository.existsById(directorId)) {
             throw new NotFoundException("Director not found: " + directorId);
-        }
-        if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
-            throw new IllegalArgumentException("Sort must be 'year' or 'likes'");
         }
         return filmRepository.findByDirectorSorted(directorId, sortBy);
     }
@@ -151,5 +117,35 @@ public class FilmService {
             throw new ValidationException("parameter 'by' must contain at least one of: title, director");
         }
         return filmRepository.search(query, byTitle, byDirector);
+    }
+
+    private void validateLikeParams(Long filmId, Long userId) {
+        if (filmId == null) throw new IllegalArgumentException("filmId cannot be null");
+        if (userId == null) throw new IllegalArgumentException("userId cannot be null");
+        if (filmId < 1) throw new NotFoundException("filmId cannot be less than 1");
+        if (userId < 1) throw new NotFoundException("userId cannot be less than 1");
+    }
+
+    private void validateGenres(Collection<Genre> genres) {
+        if (genres == null || genres.isEmpty()) return;
+
+        Set<Long> allGenreIds = genreService.findAll()
+                .stream()
+                .map(Genre::getId)
+                .collect(toSet());
+
+        for (Genre g : genres) {
+            // [fix @105] не сравниваем g.getId() с null (если он примитив)
+            if (g == null || !allGenreIds.contains(g.getId())) {
+                throw new NotFoundException("Genre not found");
+            }
+        }
+    }
+
+    private void validateMpa(Mpa mpa) {
+        // [fix @89] не сравниваем getId() с null (если он примитив)
+        if (mpa == null || !mpaService.exists(mpa.getId())) {
+            throw new NotFoundException("Mpa not found");
+        }
     }
 }
