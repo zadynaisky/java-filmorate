@@ -24,27 +24,15 @@ public class RecommendationService {
         // 0) проверим, что пользователь существует
         userService.findById(userId);
 
-        // 1) пробуем определить "самого похожего" пользователя основным способом
-        Long similarUserId = recommendationRepository.findUserWithMostCommonLikes(userId);
-
-        // 2) fallback: если null/<=0 — попробуем взять первого из списка "похожих"
-        if (similarUserId == null || similarUserId <= 0L) {
-            List<Long> similarUsers = recommendationRepository.findUsersWithCommonLikes(userId);
-            if (similarUsers != null && !similarUsers.isEmpty()) {
-                // первый валидный id
-                similarUserId = similarUsers.stream()
-                        .filter(Objects::nonNull)
-                        .filter(id -> id > 0L)
-                        .findFirst()
-                        .orElse(null);
-            }
-        }
-
-        // если совсем никого не нашли — рекомендаций нет
-        if (similarUserId == null || similarUserId <= 0L) {
+        // 1) находим похожих пользователей, отсортированных по количеству общих лайков
+        List<Long> similarUsers = recommendationRepository.findUsersWithCommonLikes(userId);
+        if (similarUsers == null || similarUsers.isEmpty()) {
             log.info("No similar users found for user {}", userId);
             return Collections.emptyList();
         }
+
+        // 2) берем первого (самого похожего) пользователя
+        Long similarUserId = similarUsers.get(0);
 
         // 3) id фильмов, которые лайкнул похожий пользователь, но не лайкнул текущий
         List<Long> recommendedFilmIds = recommendationRepository.getRecommendedFilmIds(userId, similarUserId);

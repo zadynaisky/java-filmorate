@@ -90,7 +90,7 @@ public class RecommendationServiceTest {
         List<Long> recommendedFilmIds = List.of(3L); // user2 likes film 3, but user1 doesn't
 
         when(userService.findById(userId)).thenReturn(user1);
-        when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(2L);
+        when(recommendationRepository.findUsersWithCommonLikes(userId)).thenReturn(List.of(2L));
         when(recommendationRepository.getRecommendedFilmIds(userId, 2L)).thenReturn(recommendedFilmIds);
         when(filmRepository.findByIdsPreservingOrder(List.of(3L))).thenReturn(List.of(film3));
 
@@ -101,7 +101,7 @@ public class RecommendationServiceTest {
         assertEquals(1, recommendations.size());
         assertTrue(recommendations.contains(film3));
         verify(userService).findById(userId);
-        verify(recommendationRepository).findUserWithMostCommonLikes(userId);
+        verify(recommendationRepository).findUsersWithCommonLikes(userId);
         verify(recommendationRepository).getRecommendedFilmIds(userId, 2L);
         verify(filmRepository).findByIdsPreservingOrder(List.of(3L));
     }
@@ -153,7 +153,7 @@ public class RecommendationServiceTest {
         List<Long> recommendedFilmIds = List.of(2L, 3L); // user2 likes films 2, 3, but user1 doesn't
 
         when(userService.findById(userId)).thenReturn(user1);
-        when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(2L);
+        when(recommendationRepository.findUsersWithCommonLikes(userId)).thenReturn(List.of(2L));
         when(recommendationRepository.getRecommendedFilmIds(userId, 2L)).thenReturn(recommendedFilmIds);
         when(filmRepository.findByIdsPreservingOrder(List.of(2L, 3L))).thenReturn(List.of(film2, film3));
 
@@ -165,7 +165,7 @@ public class RecommendationServiceTest {
         assertTrue(recommendations.contains(film2));
         assertTrue(recommendations.contains(film3));
         verify(userService).findById(userId);
-        verify(recommendationRepository).findUserWithMostCommonLikes(userId);
+        verify(recommendationRepository).findUsersWithCommonLikes(userId);
         verify(recommendationRepository).getRecommendedFilmIds(userId, 2L);
         verify(filmRepository).findByIdsPreservingOrder(List.of(2L, 3L));
     }
@@ -193,7 +193,7 @@ public class RecommendationServiceTest {
         film5.setName("Film 5");
 
         when(userService.findById(userId)).thenReturn(user1);
-        when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(3L);
+        when(recommendationRepository.findUsersWithCommonLikes(userId)).thenReturn(List.of(3L, 2L));
         when(recommendationRepository.getRecommendedFilmIds(userId, 3L)).thenReturn(recommendedFilmIds);
         when(filmRepository.findByIdsPreservingOrder(List.of(5L))).thenReturn(List.of(film5));
 
@@ -204,7 +204,7 @@ public class RecommendationServiceTest {
         assertEquals(1, recommendations.size());
         assertTrue(recommendations.contains(film5)); // Should recommend film 5 from user3, not film 4 from user2
         verify(userService).findById(userId);
-        verify(recommendationRepository).findUserWithMostCommonLikes(userId);
+        verify(recommendationRepository).findUsersWithCommonLikes(userId);
         verify(recommendationRepository).getRecommendedFilmIds(userId, 3L);
         verify(filmRepository).findByIdsPreservingOrder(List.of(5L));
         verify(filmRepository, never()).findByIdsPreservingOrder(List.of(4L));
