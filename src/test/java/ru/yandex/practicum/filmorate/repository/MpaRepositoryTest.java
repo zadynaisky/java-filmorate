@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.repository;
 
-import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -17,9 +16,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @JdbcTest
 @AutoConfigureTestDatabase
 @Import({MpaRepository.class, MpaRowMapper.class})
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class MpaRepositoryTest {
-    private final MpaRepository mpaRepository;
+    @Autowired
+    private MpaRepository mpaRepository;
 
     @Test
     void testFindById() {

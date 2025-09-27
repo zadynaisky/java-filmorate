@@ -4,18 +4,29 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.repository.UserRepository;
 
+import java.time.Instant;
 import java.util.Collection;
+
+import static ru.yandex.practicum.filmorate.model.EventType.FRIEND;
+import static ru.yandex.practicum.filmorate.model.OperationType.ADD;
+import static ru.yandex.practicum.filmorate.model.OperationType.REMOVE;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final EventService eventService;
 
     public User findById(long userId) {
-        return userRepository.findById(userId);
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new NotFoundException("User not found: " + userId);
+        }
+        return user;
     }
 
     public Collection<User> findAll() {
@@ -23,10 +34,18 @@ public class UserService {
     }
 
     public User create(final User user) {
+        user.setLogin(user.getLogin().trim());
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
         return userRepository.create(user);
     }
 
     public User update(User newUser) {
+        newUser.setLogin(newUser.getLogin().trim());
+        if (newUser.getName() == null || newUser.getName().isBlank()) {
+            newUser.setName(newUser.getLogin());
+        }
         return userRepository.update(newUser);
     }
 
@@ -41,6 +60,7 @@ public class UserService {
         if (user == null || friendUser == null)
             throw new NotFoundException("user cannot be null");
         userRepository.addFriend(userId, friendUserId);
+        eventService.create(new Event(Instant.now().toEpochMilli(), FRIEND, ADD, userId, friendUserId));
     }
 
     public void removeFriend(Long userId, Long friendUserId) {
@@ -51,13 +71,16 @@ public class UserService {
         if (!exists(userId) || !exists(friendUserId))
             throw new NotFoundException("user not found");
         userRepository.removeFriend(userId, friendUserId);
+        eventService.create(new Event(Instant.now().toEpochMilli(), FRIEND, REMOVE, userId, friendUserId));
     }
 
     public Collection<User> getFriends(Long userId) {
-        if (userId == null)
+        if (userId == null) {
             throw new ValidationException("userId cannot be null");
-        if (!exists(userId))
+        }
+        if (!exists(userId)) {
             throw new NotFoundException("user not found");
+        }
         return userRepository.getFriends(userId);
     }
 
@@ -71,6 +94,20 @@ public class UserService {
     }
 
     public boolean exists(long userId) {
-        return findById(userId) != null;
+        return userRepository.findById(userId) != null;
+    }
+
+    public void delete(long userId) {
+        if (!exists(userId)) {
+            throw new NotFoundException("User not found: " + userId);
+        }
+        userRepository.deleteById(userId);
+    }
+
+    public Collection<Event> getFeed(Long userId) {
+        if (!exists(userId)) {
+            throw new NotFoundException("User not found: " + userId);
+        }
+        return eventService.getFeed(userId);
     }
 }

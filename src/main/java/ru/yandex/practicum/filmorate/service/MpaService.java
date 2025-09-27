@@ -9,10 +9,11 @@ import ru.yandex.practicum.filmorate.storage.repository.MpaRepository;
 
 import java.util.Collection;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MpaService {
+
     private final MpaRepository mpaRepository;
 
     public Collection<Mpa> findAll() {
@@ -23,8 +24,9 @@ public class MpaService {
     public Mpa findById(long mpaId) {
         log.info("Find mpa by id {}", mpaId);
         var mpa = mpaRepository.findById(mpaId);
-        if (mpa == null)
+        if (mpa == null) {
             throw new NotFoundException("Mpa with id " + mpaId + " not found");
+        }
         return mpa;
     }
 

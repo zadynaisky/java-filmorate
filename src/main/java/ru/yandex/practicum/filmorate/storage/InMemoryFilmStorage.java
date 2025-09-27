@@ -11,9 +11,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
 @Slf4j
+@Component
 public class InMemoryFilmStorage implements FilmStorage {
+
     private final Map<Long, Film> films = new HashMap<>();
 
     @Override
