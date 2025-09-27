@@ -87,12 +87,10 @@ public class RecommendationServiceTest {
     void getRecommendations_ShouldReturnRecommendedFilms_WhenSimilarUserExists() {
         // Arrange
         Long userId = 1L;
-        List<Long> similarUsers = List.of(2L); // user2 is most similar
         List<Long> recommendedFilmIds = List.of(3L); // user2 likes film 3, but user1 doesn't
 
         when(userService.findById(userId)).thenReturn(user1);
         when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(2L);
-        when(recommendationRepository.findUsersWithCommonLikes(userId)).thenReturn(similarUsers);
         when(recommendationRepository.getRecommendedFilmIds(userId, 2L)).thenReturn(recommendedFilmIds);
         when(filmRepository.findByIdsPreservingOrder(List.of(3L))).thenReturn(List.of(film3));
 
@@ -104,7 +102,6 @@ public class RecommendationServiceTest {
         assertTrue(recommendations.contains(film3));
         verify(userService).findById(userId);
         verify(recommendationRepository).findUserWithMostCommonLikes(userId);
-        verify(recommendationRepository).findUsersWithCommonLikes(userId);
         verify(recommendationRepository).getRecommendedFilmIds(userId, 2L);
         verify(filmRepository).findByIdsPreservingOrder(List.of(3L));
     }
@@ -153,12 +150,10 @@ public class RecommendationServiceTest {
     void getRecommendations_ShouldReturnMultipleFilms_WhenSimilarUserLikesMultipleNewFilms() {
         // Arrange
         Long userId = 1L;
-        List<Long> similarUsers = List.of(2L); // user2 is most similar
         List<Long> recommendedFilmIds = List.of(2L, 3L); // user2 likes films 2, 3, but user1 doesn't
 
         when(userService.findById(userId)).thenReturn(user1);
         when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(2L);
-        when(recommendationRepository.findUsersWithCommonLikes(userId)).thenReturn(similarUsers);
         when(recommendationRepository.getRecommendedFilmIds(userId, 2L)).thenReturn(recommendedFilmIds);
         when(filmRepository.findByIdsPreservingOrder(List.of(2L, 3L))).thenReturn(List.of(film2, film3));
 
@@ -171,7 +166,6 @@ public class RecommendationServiceTest {
         assertTrue(recommendations.contains(film3));
         verify(userService).findById(userId);
         verify(recommendationRepository).findUserWithMostCommonLikes(userId);
-        verify(recommendationRepository).findUsersWithCommonLikes(userId);
         verify(recommendationRepository).getRecommendedFilmIds(userId, 2L);
         verify(filmRepository).findByIdsPreservingOrder(List.of(2L, 3L));
     }
@@ -192,7 +186,6 @@ public class RecommendationServiceTest {
     void getRecommendations_ShouldChooseMostSimilarUser_WhenMultipleSimilarUsersExist() {
         // Arrange
         Long userId = 1L;
-        List<Long> similarUsers = List.of(3L, 2L); // user3 is most similar (first in list), user2 is less similar
         List<Long> recommendedFilmIds = List.of(5L); // user3 likes film 5, but user1 doesn't
 
         Film film5 = new Film();
@@ -201,7 +194,6 @@ public class RecommendationServiceTest {
 
         when(userService.findById(userId)).thenReturn(user1);
         when(recommendationRepository.findUserWithMostCommonLikes(userId)).thenReturn(3L);
-        when(recommendationRepository.findUsersWithCommonLikes(userId)).thenReturn(similarUsers);
         when(recommendationRepository.getRecommendedFilmIds(userId, 3L)).thenReturn(recommendedFilmIds);
         when(filmRepository.findByIdsPreservingOrder(List.of(5L))).thenReturn(List.of(film5));
 
@@ -213,7 +205,6 @@ public class RecommendationServiceTest {
         assertTrue(recommendations.contains(film5)); // Should recommend film 5 from user3, not film 4 from user2
         verify(userService).findById(userId);
         verify(recommendationRepository).findUserWithMostCommonLikes(userId);
-        verify(recommendationRepository).findUsersWithCommonLikes(userId);
         verify(recommendationRepository).getRecommendedFilmIds(userId, 3L);
         verify(filmRepository).findByIdsPreservingOrder(List.of(5L));
         verify(filmRepository, never()).findByIdsPreservingOrder(List.of(4L));
