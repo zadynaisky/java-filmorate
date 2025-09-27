@@ -64,13 +64,11 @@ public class RecommendationService {
             return Collections.emptyList();
         }
 
-        // 4) загружаем фильмы и дедуплицируем с сохранением порядка
+        // 4) загружаем фильмы одним запросом и дедуплицируем с сохранением порядка
+        List<Film> films = filmRepository.findByIds(recommendedFilmIds);
         Map<Long, Film> unique = new LinkedHashMap<>();
-        for (Long id : recommendedFilmIds) {
-            Film f = filmRepository.findById(id);
-            if (f != null) {
-                unique.putIfAbsent(f.getId(), f);
-            }
+        for (Film film : films) {
+            unique.putIfAbsent(film.getId(), film);
         }
 
         return new ArrayList<>(unique.values());
