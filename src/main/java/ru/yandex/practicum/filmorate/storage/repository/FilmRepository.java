@@ -497,4 +497,8 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
                     .collect(Collectors.toCollection(LinkedHashSet::new)));
         }
     }
+
+    public Collection<Film> findByIdsPreservingOrder(List<Long> ids) {
+        return findRichByIdsPreservingOrder(ids);
+    }
 }

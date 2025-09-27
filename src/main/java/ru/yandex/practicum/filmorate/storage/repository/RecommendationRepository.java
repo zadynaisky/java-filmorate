@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.repository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -9,10 +8,10 @@ import ru.yandex.practicum.filmorate.model.Film;
 import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 @Repository
 public class RecommendationRepository extends BaseRepository<Film> {
 
-    private static final Logger log = LoggerFactory.getLogger(RecommendationRepository.class);
     private final JdbcTemplate jdbcTemplate;
 
     public RecommendationRepository(JdbcTemplate jdbcTemplate) {
