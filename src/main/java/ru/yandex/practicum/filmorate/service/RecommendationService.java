@@ -19,13 +19,6 @@ public class RecommendationService {
     private final FilmRepository filmRepository;
     private final UserService userService;
 
-    /**
-     * Коллаборативные рекомендации:
-     * 1) убеждаемся, что пользователь существует;
-     * 2) выбираем самого похожего пользователя (исключая null/0L);
-     * 3) берём фильмы, которые лайкнул похожий, но не лайкнул текущий;
-     * 4) возвращаем список фильмов в порядке, заданном SQL репозитория.
-     */
     public Collection<Film> getRecommendations(Long userId) {
         log.info("Generating recommendations for user {}", userId);
 
@@ -64,13 +57,13 @@ public class RecommendationService {
             return Collections.emptyList();
         }
 
-        // 4) загружаем фильмы одним запросом и дедуплицируем с сохранением порядка
-        List<Film> films = filmRepository.findByIds(recommendedFilmIds);
-        Map<Long, Film> unique = new LinkedHashMap<>();
-        for (Film film : films) {
-            unique.putIfAbsent(film.getId(), film);
-        }
+        List<Long> ids = recommendedFilmIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()              // убираем дубли, порядок сохраняется (stable)
+                .toList();
 
-        return new ArrayList<>(unique.values());
+        Collection<Film> films = filmRepository.findByIdsPreservingOrder(ids);
+        return new ArrayList<>(films);
+
     }
 }

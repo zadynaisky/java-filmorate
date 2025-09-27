@@ -498,14 +498,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         }
     }
 
-    public List<Film> findByIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        String placeholders = ids.stream().map(id -> "?").collect(Collectors.joining(","));
-        String sql = "SELECT * FROM film WHERE id IN (" + placeholders + ")";
-
-        return jdbcTemplate.query(sql, filmRowMapper, ids.toArray());
+    public Collection<Film> findByIdsPreservingOrder(List<Long> ids) {
+        return findRichByIdsPreservingOrder(ids);
     }
 }
