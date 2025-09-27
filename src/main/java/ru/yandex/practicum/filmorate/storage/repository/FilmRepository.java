@@ -5,10 +5,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Director;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper2;
@@ -41,7 +38,43 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
 
     @Override
     public Collection<Film> findAll() {
-        var films = new ArrayList<>(findAll2());
+        String sql = """
+                SELECT f.id AS film_id, f.name, f.description, f.release_date, f.duration,
+                       f.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
+                       g.id AS genre_id, g.name AS genre_name
+                FROM FILM f
+                LEFT JOIN FILM_GENRE fg ON f.id = fg.film_id
+                LEFT JOIN GENRE g ON fg.genre_id = g.id
+                LEFT JOIN MPA_RATING as mp ON f.MPA_RATING_ID = mp.ID;
+                """;
+
+        List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
+                new FilmRowMapper2().mapRow(rs, rowNum),
+                new GenreRowMapper2().mapRow(rs, rowNum),
+                new MpaRowMapper2().mapRow(rs, rowNum)
+        });
+
+        Map<Long, Film> filmMap = new HashMap<>();
+
+        for (Object[] row : rows) {
+            Film film = (Film) row[0];
+            Genre genre = (Genre) row[1];
+            Mpa mpa = (Mpa) row[2];
+            film.setMpa(mpa);
+
+            if (!filmMap.containsKey(film.getId())) {
+                filmMap.put(film.getId(), film);
+                film.setGenres(new HashSet<>());
+            }
+
+            if (genre != null) {
+                filmMap.get(film.getId()).getGenres().add(genre);
+            }
+        }
+        loadDirectorsFor(filmMap);
+        filmMap.values().forEach(this::normalizeFilm);
+
+        var films = new ArrayList<>(filmMap.values());
         films.forEach(this::normalizeFilm);
         return films;
     }
@@ -192,45 +225,6 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         loadDirectorsFor(filmMap);
         filmMap.values().forEach(this::normalizeFilm);
         return filmMap.values();
-    }
-
-    public Collection<Film> findAll2() {
-        String sql = """
-                SELECT f.id AS film_id, f.name, f.description, f.release_date, f.duration,
-                       f.mpa_rating_id, mp.NAME as mpa_name, mp.DESCRIPTION as mpa_description,
-                       g.id AS genre_id, g.name AS genre_name
-                FROM FILM f
-                LEFT JOIN FILM_GENRE fg ON f.id = fg.film_id
-                LEFT JOIN GENRE g ON fg.genre_id = g.id
-                LEFT JOIN MPA_RATING as mp ON f.MPA_RATING_ID = mp.ID;
-                """;
-
-        List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
-                new FilmRowMapper2().mapRow(rs, rowNum),
-                new GenreRowMapper2().mapRow(rs, rowNum),
-                new MpaRowMapper2().mapRow(rs, rowNum)
-        });
-
-        Map<Long, Film> filmMap = new HashMap<>();
-
-        for (Object[] row : rows) {
-            Film film = (Film) row[0];
-            Genre genre = (Genre) row[1];
-            Mpa mpa = (Mpa) row[2];
-            film.setMpa(mpa);
-
-            if (!filmMap.containsKey(film.getId())) {
-                filmMap.put(film.getId(), film);
-                film.setGenres(new HashSet<>());
-            }
-
-            if (genre != null) {
-                filmMap.get(film.getId()).getGenres().add(genre);
-            }
-        }
-        loadDirectorsFor(filmMap);
-        filmMap.values().forEach(this::normalizeFilm);
-        return new ArrayList<>(filmMap.values());
     }
 
     public void deleteById(Long id) {
@@ -419,11 +413,10 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         return ordered;
     }
 
-    public Collection<Film> findByDirectorSorted(Long directorId, String sortBy) {
+    public Collection<Film> findByDirectorSorted(Long directorId, SortBy sortBy) {
         List<Long> ids = switch (sortBy) {
-            case "year" -> findFilmIdsByDirectorOrderByYear(directorId);
-            case "likes" -> findFilmIdsByDirectorOrderByLikes(directorId);
-            default -> throw new IllegalArgumentException("Sort must be 'year' or 'likes'");
+            case YEAR -> findFilmIdsByDirectorOrderByYear(directorId);
+            case LIKES -> findFilmIdsByDirectorOrderByLikes(directorId);
         };
         return findRichByIdsPreservingOrder(ids);
     }

@@ -9,16 +9,16 @@ import lombok.Data;
 @Data
 public class Review {
     @JsonProperty("reviewId")
-    long id;
+    private long id;
     @Size(max = 5000, message = "Content cannot be longer than 5000 characters")
     @NotBlank(message = "Content cannot be blank")
-    String content;
+    private String content;
     @JsonProperty("isPositive")
     @NotNull
-    Boolean isPositive;
+    private Boolean isPositive;
     @NotNull
-    Long filmId;
+    private Long filmId;
     @NotNull
-    Long userId;
-    int useful;
+    private Long userId;
+    private int useful;
 }
