@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.storage.repository.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.repository.RecommendationRepository;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
