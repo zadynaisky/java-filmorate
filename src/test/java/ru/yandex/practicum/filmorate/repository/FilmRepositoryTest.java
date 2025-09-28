@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.GenreRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.MpaRowMapper;
@@ -28,7 +29,8 @@ import static org.junit.jupiter.api.Assertions.*;
         GenreRepository.class, GenreRowMapper.class,
         MpaRepository.class, MpaRowMapper.class,
         LikeRepository.class,
-        UserRepository.class, UserRowMapper.class})
+        UserRepository.class, UserRowMapper.class
+})
 public class FilmRepositoryTest {
     private final FilmRepository filmRepository;
     private final GenreRepository genreRepository;
@@ -52,6 +54,7 @@ public class FilmRepositoryTest {
     void testCreateAndGetById() {
         Film created = filmRepository.create(film);
         assertNotNull(created);
+        assertNotNull(created.getId());
         assertTrue(created.getId() > 0);
 
         Film result = filmRepository.findById(created.getId());
@@ -65,12 +68,16 @@ public class FilmRepositoryTest {
     @Test
     void testUpdateFilm() {
         Film created = filmRepository.create(film);
+
+        // получаем жанр с id=2, и используем одну и ту же ссылку в сетапе и в ассёрте
+        Genre g2 = genreRepository.findById(2);
+
         created.setName("Updated name");
         created.setDescription("Updated description");
         created.setDuration(123);
         created.setReleaseDate(LocalDate.parse("2000-10-19"));
         created.setMpa(mpaRepository.findById(2));
-        created.setGenres(Set.of(genreRepository.findById(2)));
+        created.setGenres(Set.of(g2));
 
         Film updated = filmRepository.update(created);
 
@@ -79,12 +86,18 @@ public class FilmRepositoryTest {
         assertEquals(123, updated.getDuration());
         assertEquals(LocalDate.parse("2000-10-19"), updated.getReleaseDate());
         assertEquals(2, updated.getMpa().getId());
-        assertTrue(created.getGenres().contains(genreRepository.findById(2)));
+
+        // если у Genre корректно переопределены equals/hashCode — этого достаточно:
+        assertTrue(updated.getGenres().contains(g2));
+
+        // если equals/hashCode у Genre не переопределены, используй проверку по id:
+        // assertTrue(updated.getGenres().stream().anyMatch(g -> g.getId() == 2));
     }
 
     @Test
     void testGetAllFilms() {
         filmRepository.create(film);
+
         Film another = new Film();
         another.setName("Another name");
         another.setDescription("Another description");

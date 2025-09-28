@@ -11,9 +11,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
 @Slf4j
+@Component
 public class InMemoryUserStorage implements UserStorage {
+
     private final Map<Long, User> users = new HashMap<>();
 
     @Override

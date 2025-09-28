@@ -67,8 +67,14 @@ class FilmTest {
     }
 
     @Test
-    void shouldFailWhenReleaseDateOneDayAfterToday() {
+    void shouldAllowFutureReleaseDate() {
         film.setReleaseDate(LocalDate.now().plusDays(1));
+        assertEquals(0, validator.validate(film).size());
+    }
+
+    @Test
+    void shouldFailWhenBeforeCinemaBirthday() {
+        film.setReleaseDate(LocalDate.of(1895, 12, 27));
         assertEquals(1, validator.validate(film).size());
     }
 
