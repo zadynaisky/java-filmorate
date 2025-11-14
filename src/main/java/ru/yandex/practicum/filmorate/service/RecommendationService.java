@@ -41,6 +41,12 @@ public class RecommendationService {
             return Collections.emptyList();
         }
 
+        // 4) загружаем фильмы одним запросом и дедуплицируем с сохранением порядка
+        List<Film> films = filmRepository.findByIds(recommendedFilmIds);
+        Map<Long, Film> unique = new LinkedHashMap<>();
+        for (Film film : films) {
+            unique.putIfAbsent(film.getId(), film);
+        }
         // 4) грузим фильмы пакетно, убираем дубли, сохраняем порядок
         List<Long> ids = recommendedFilmIds.stream()
                 .filter(Objects::nonNull)
