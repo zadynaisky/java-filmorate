@@ -507,5 +507,7 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         String sql = "SELECT * FROM film WHERE id IN (" + placeholders + ")";
 
         return jdbcTemplate.query(sql, filmRowMapper, ids.toArray());
+    public Collection<Film> findByIdsPreservingOrder(List<Long> ids) {
+        return findRichByIdsPreservingOrder(ids);
     }
 }
